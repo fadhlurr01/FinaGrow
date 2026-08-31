@@ -250,22 +250,66 @@ const fmsReducer = (state: FMSState, action: Action): FMSState => {
         ...state,
         notifications: [action.payload, ...(state.notifications || [])],
       };
-    case 'LOGIN_USER':
+    case 'LOGIN_USER': {
+      const isDemo = Boolean(
+        action.payload.email && 
+        (
+          action.payload.email.toLowerCase().includes('demo') ||
+          action.payload.email.toLowerCase() === 'admin@finagrow.com'
+        )
+      );
+
+      if (!isDemo) {
+        // Newly registered account: complete clean slate without demo leftovers
+        return {
+          ...DEFAULT_STATE,
+          currentUserEmail: action.payload.email,
+          coa: [],
+          transactions: [],
+          invoices: [],
+          budgets: [],
+          assets: [],
+          inventory: [],
+          vendors: [],
+          projects: [],
+          payrollRuns: [],
+          entities: action.payload.stateData?.activeEntityId ? [
+            {
+              id: action.payload.stateData.activeEntityId,
+              code: action.payload.stateData.activeEntity || 'HQ',
+              name: action.payload.stateData.activeEntity || 'Perusahaan Utama',
+              currency: 'IDR'
+            }
+          ] : [],
+          ...(action.payload.stateData || {}),
+        };
+      }
+
+      // Demo user: load authoritative reference dataset
       return {
-        ...state,
+        ...DEFAULT_STATE,
         currentUserEmail: action.payload.email,
         ...(action.payload.stateData || {}),
       };
+    }
     case 'LOGOUT_USER':
       try {
         localStorage.removeItem('fms_active_user_email');
         localStorage.removeItem('fms_active_organization_id');
         localStorage.removeItem('fms_active_entity_id');
+        localStorage.removeItem('fms_session_token');
       } catch (_) {}
       return {
         ...DEFAULT_STATE,
         currentUserEmail: undefined,
         activeEntityId: '',
+        coa: [],
+        transactions: [],
+        invoices: [],
+        budgets: [],
+        assets: [],
+        inventory: [],
+        vendors: [],
       };
     default:
       return state;
