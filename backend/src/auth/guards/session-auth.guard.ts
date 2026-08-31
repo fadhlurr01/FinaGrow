@@ -1,0 +1,84 @@
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import * as crypto from 'crypto';
+
+@Injectable()
+export class SessionAuthGuard implements CanActivate {
+  constructor(private prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+
+    // 1. Extract session token from HttpOnly cookie or Authorization header
+    let token: string | undefined = request.cookies?.['finagrow_session'];
+
+    if (!token && request.headers.authorization) {
+      const parts = request.headers.authorization.split(' ');
+      if (parts.length === 2 && parts[0] === 'Bearer') {
+        token = parts[1];
+      }
+    }
+
+    if (!token) {
+      throw new UnauthorizedException('Authentication required. No session token provided.');
+    }
+
+    // 2. Hash token for database comparison
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // 3. Find active session
+    const session = await this.prisma.session.findUnique({
+      where: { tokenHash },
+      include: {
+        user: {
+          include: {
+            memberships: {
+              include: {
+                organization: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Invalid or expired session.');
+    }
+
+    if (session.expiresAt < new Date()) {
+      // Clean up expired session
+      await this.prisma.session.delete({ where: { id: session.id } }).catch(() => {});
+      throw new UnauthorizedException('Session has expired. Please sign in again.');
+    }
+
+    if (!session.user.isActive) {
+      throw new UnauthorizedException('User account has been suspended or deactivated.');
+    }
+
+    // 4. Attach user profile and session to request object
+    const { passwordHash, ...sanitizedUser } = session.user;
+    request.user = sanitizedUser;
+    request.sessionId = session.id;
+
+    // Attach active organization if header is passed or default to primary membership
+    const targetOrgId = request.headers['x-organization-id'] as string;
+    if (targetOrgId) {
+      const match = sanitizedUser.memberships.find((m) => m.organizationId === targetOrgId);
+      if (match) {
+        request.tenant = match.organization;
+        request.tenantMember = match;
+      }
+    } else if (sanitizedUser.memberships.length > 0) {
+      request.tenant = sanitizedUser.memberships[0].organization;
+      request.tenantMember = sanitizedUser.memberships[0];
+    }
+
+    return true;
+  }
+}
