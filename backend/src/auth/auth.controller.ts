@@ -33,8 +33,8 @@ export class AuthController {
 
     res.cookie('finagrow_session', token, {
       httpOnly: true,
-      secure: cookieSecure || isProduction,
-      sameSite: 'lax',
+      secure: isProduction ? true : (cookieSecure || false),
+      sameSite: isProduction ? 'none' : 'lax',
       expires: expiresAt,
       path: '/',
     });

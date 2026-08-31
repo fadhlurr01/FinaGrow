@@ -94,6 +94,12 @@ export async function apiClient<T = any>(
     headers.set('x-organization-id', activeOrgId);
   }
 
+  // Include Bearer Authorization token if stored (cross-origin resilient)
+  const sessionToken = localStorage.getItem('fms_session_token');
+  if (sessionToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${sessionToken}`);
+  }
+
   const config: RequestInit = {
     ...options,
     headers,
