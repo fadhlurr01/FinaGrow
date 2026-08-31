@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
   const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
 
   const effectiveChartData = useMemo(() => {
-    if (chartData.length > 0) return chartData;
+    if (chartData.length > 0 && !isDemo) return chartData;
     if (isDemo) {
       return [
         { name: 'Jan', revenue: 450000000, expenses: 280000000 },
@@ -101,7 +101,7 @@ const Dashboard: React.FC = () => {
   }, [chartData, isDemo]);
 
   const effectiveWatchlist = useMemo(() => {
-    if (summary?.accountWatchlist && summary.accountWatchlist.length > 0) {
+    if (summary?.accountWatchlist && summary.accountWatchlist.length > 0 && !isDemo) {
       return summary.accountWatchlist;
     }
     if (isDemo) {
@@ -116,7 +116,7 @@ const Dashboard: React.FC = () => {
   }, [summary, isDemo]);
 
   const effectiveRecentTransactions = useMemo(() => {
-    if (recentTransactions.length > 0) return recentTransactions;
+    if (recentTransactions.length > 0 && !isDemo) return recentTransactions;
     if (isDemo) {
       return [
         {
@@ -180,35 +180,6 @@ const Dashboard: React.FC = () => {
   }, [recentTransactions, isDemo]);
 
   const metrics: Metric[] = useMemo(() => {
-    if (summary) {
-      return [
-        {
-          title: t('totalRevenue') || 'Total Revenue',
-          value: formatCurrency(summary.totalRevenue),
-          change: summary.revenueChangePercent,
-          changeType: 'increase',
-        },
-        {
-          title: t('totalExpenses') || 'Total Expenses',
-          value: formatCurrency(summary.totalExpenses),
-          change: summary.expenseChangePercent,
-          changeType: 'increase',
-        },
-        {
-          title: t('netProfit') || 'Net Profit',
-          value: formatCurrency(summary.netProfit),
-          change: summary.netProfitChangePercent,
-          changeType: summary.netProfit >= 0 ? 'increase' : 'decrease',
-        },
-        {
-          title: t('cashBalance') || 'Cash & Bank Balance',
-          value: formatCurrency(summary.cashBalance),
-          change: summary.cashBalanceChangePercent,
-          changeType: 'decrease',
-        },
-      ];
-    }
-
     if (isDemo) {
       return [
         {
@@ -238,13 +209,62 @@ const Dashboard: React.FC = () => {
       ];
     }
 
+    if (summary) {
+      return [
+        {
+          title: t('totalRevenue') || 'Total Revenue',
+          value: formatCurrency(summary.totalRevenue),
+          change: summary.revenueChangePercent,
+          changeType: 'increase',
+        },
+        {
+          title: t('totalExpenses') || 'Total Expenses',
+          value: formatCurrency(summary.totalExpenses),
+          change: summary.expenseChangePercent,
+          changeType: 'increase',
+        },
+        {
+          title: t('netProfit') || 'Net Profit',
+          value: formatCurrency(summary.netProfit),
+          change: summary.netProfitChangePercent,
+          changeType: summary.netProfit >= 0 ? 'increase' : 'decrease',
+        },
+        {
+          title: t('cashBalance') || 'Cash & Bank Balance',
+          value: formatCurrency(summary.cashBalance),
+          change: summary.cashBalanceChangePercent,
+          changeType: 'decrease',
+        },
+      ];
+    }
+
     return [
-      { title: t('totalRevenue') || 'Total Revenue', value: formatCurrency(0), change: '0%', changeType: 'increase' },
-      { title: t('totalExpenses') || 'Total Expenses', value: formatCurrency(0), change: '0%', changeType: 'increase' },
-      { title: t('netProfit') || 'Net Profit', value: formatCurrency(0), change: '0%', changeType: 'increase' },
-      { title: t('cashBalance') || 'Cash & Bank Balance', value: formatCurrency(0), change: '0%', changeType: 'decrease' },
+      {
+        title: t('totalRevenue') || 'Total Revenue',
+        value: formatCurrency(0),
+        change: '+0.0%',
+        changeType: 'increase',
+      },
+      {
+        title: t('totalExpenses') || 'Total Expenses',
+        value: formatCurrency(0),
+        change: '+0.0%',
+        changeType: 'increase',
+      },
+      {
+        title: t('netProfit') || 'Net Profit',
+        value: formatCurrency(0),
+        change: '+0.0%',
+        changeType: 'increase',
+      },
+      {
+        title: t('cashBalance') || 'Cash & Bank Balance',
+        value: formatCurrency(0),
+        change: '+0.0%',
+        changeType: 'increase',
+      },
     ];
-  }, [summary, isDemo, language, state.currency]);
+  }, [summary, isDemo, state.currency, t, language]);
 
   return (
     <div className="container mx-auto space-y-6 pb-12">
