@@ -315,7 +315,7 @@ const Users: React.FC = () => {
                   {
                     id: 'u-1',
                     name: 'Demo Admin',
-                    seatId: 'SEAT ID: REG-2',
+                    seatId: 'SEAT ID: REG_2',
                     email: 'demo_admin@fms.com',
                     role: 'Admin',
                     capacity: 'Pro Plan',
@@ -325,7 +325,7 @@ const Users: React.FC = () => {
                   {
                     id: 'u-2',
                     name: 'Demo Account',
-                    seatId: 'SEAT ID: REG-4',
+                    seatId: 'SEAT ID: REG_4',
                     email: 'demo@fms.com',
                     role: 'Admin',
                     capacity: 'Pro Plan',
@@ -335,7 +335,7 @@ const Users: React.FC = () => {
                   {
                     id: 'u-3',
                     name: 'Andi Wijaya',
-                    seatId: 'SEAT ID: REG-0',
+                    seatId: 'SEAT ID: REG_0',
                     email: 'andi@bellcorp.com',
                     role: 'User',
                     capacity: 'Free Plan',
@@ -345,7 +345,7 @@ const Users: React.FC = () => {
                   {
                     id: 'u-4',
                     name: 'Sari Indah',
-                    seatId: 'SEAT ID: REG-1',
+                    seatId: 'SEAT ID: REG_1',
                     email: 'sari@bellcorp.com',
                     role: 'User',
                     capacity: 'Free Plan',
@@ -355,7 +355,7 @@ const Users: React.FC = () => {
                   {
                     id: 'u-5',
                     name: 'Demo User',
-                    seatId: 'SEAT ID: REG-3',
+                    seatId: 'SEAT ID: REG_3',
                     email: 'demo_user@fms.com',
                     role: 'User',
                     capacity: 'Free Plan',
