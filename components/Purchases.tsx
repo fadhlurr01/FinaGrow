@@ -183,7 +183,7 @@ const Purchases: React.FC = () => {
           billNumber: 'BILL-2026-VND01',
           vendor: { name: 'AWS Indonesia', vendorCode: 'VND-001' },
           billDate: '2026-08-29',
-          dueDate: '2026-09-28',
+          dueDate: '2026-09-12',
           subtotal: 95000000,
           taxAmount: 10450000,
           totalAmount: 105450000,
@@ -229,7 +229,7 @@ const Purchases: React.FC = () => {
       {
         title: language === 'en' ? 'AVG. BILL VALUE' : 'RATA-RATA TAGIHAN',
         value: formatCurrency(avgBill),
-        change: avgBill > 0 ? '+4.2%' : '0.0%',
+        change: avgBill > 0 ? '+2.1%' : '0.0%',
         changeType: 'increase',
       },
     ];
