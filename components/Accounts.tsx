@@ -126,7 +126,7 @@ const ChartOfAccounts: React.FC = () => {
         });
     }
 
-    if (state.coa && state.coa.length > 0) {
+    if (state.coa && state.coa.length > 0 && isDemo) {
       return state.coa;
     }
 
