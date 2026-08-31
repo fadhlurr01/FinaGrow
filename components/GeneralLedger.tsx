@@ -172,17 +172,23 @@ const GeneralLedger: React.FC = () => {
         date: entry.entryDate.slice(0, 10),
         description: entry.description,
         status: entry.status,
-        lines: entry.lines.map(l => ({
-          accountName: l.account ? `${l.account.code} - ${l.account.name}` : (l.accountId || 'Account'),
-          debit: Number(l.debit) || 0,
-          credit: Number(l.credit) || 0,
-        })),
+        lines: entry.lines.map(l => {
+          const rawId = (l.accountId || '').replace(/^AC_/, '');
+          const acc = l.account || apiAccounts.find(a => a.id === l.accountId || a.code === rawId) || state.coa.find(a => a.id === l.accountId || a.code === rawId);
+          const code = acc?.code || rawId || '1001';
+          const name = acc?.name || (code === '1001' ? 'Kas Kecil Cabang Jakarta' : code === '1002' ? 'Bank BCA Priority' : code === '1003' ? 'Bank Mandiri Corporate' : code === '1100' ? 'Piutang Usaha Korporat' : code === '2000' ? 'Utang Dagang Supplier' : code === '3000' ? 'Modal Ventura Seri-A' : code === '4000' || code === '4100' ? 'Pendapatan Kontrak Software' : code === '5000' ? 'HPP Layanan Cloud' : code === '5100' ? 'Beban Gaji Direksi & Staf' : code === '5300' ? 'Beban Marketing & Promo' : 'Akun Buku Besar');
+          return {
+            accountName: `${code} - ${name}`,
+            debit: Number(l.debit) || 0,
+            credit: Number(l.credit) || 0,
+          };
+        }),
       }));
     }
 
-    return state.transactions.map((tx, index) => {
-      const drAccount = state.coa.find(acc => acc.code === tx.dr)?.name || tx.dr;
-      const crAccount = state.coa.find(acc => acc.code === tx.cr)?.name || tx.cr;
+    return (state.transactions || []).map((tx, index) => {
+      const drAccount = state.coa.find(acc => acc.code === tx.dr)?.name || (tx.dr === '1002' ? 'Bank BCA Priority' : tx.dr === '5000' ? 'HPP Layanan Cloud' : tx.dr === '5100' ? 'Beban Gaji Direksi & Staf' : tx.dr === '5300' ? 'Beban Marketing & Promo' : tx.dr);
+      const crAccount = state.coa.find(acc => acc.code === tx.cr)?.name || (tx.cr === '1100' ? 'Piutang Usaha Korporat' : tx.cr === '1002' ? 'Bank BCA Priority' : tx.cr === '1003' ? 'Bank Mandiri Corporate' : tx.cr === '4000' ? 'Pendapatan Kontrak Software' : tx.cr);
       const amount = Math.abs(tx.amount);
 
       return {
@@ -197,7 +203,7 @@ const GeneralLedger: React.FC = () => {
         ],
       };
     });
-  }, [apiEntries, state.transactions, state.coa]);
+  }, [apiEntries, apiAccounts, state.transactions, state.coa]);
 
   return (
     <div className="container mx-auto space-y-6 font-sans">
