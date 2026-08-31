@@ -96,7 +96,7 @@ export class AccountingService {
       where.entityId = entityId;
     }
 
-    let accounts = await this.prisma.account.findMany({
+    const accounts = await this.prisma.account.findMany({
       where,
       include: {
         parent: {
@@ -105,31 +105,6 @@ export class AccountingService {
       },
       orderBy: { code: 'asc' },
     });
-
-    // Auto-seed standard accounts if none exist for this organization
-    if (accounts.length === 0) {
-      let targetEntityId = entityId;
-      if (!targetEntityId) {
-        const primaryEntity = await this.prisma.entity.findFirst({
-          where: { organizationId },
-          orderBy: { createdAt: 'asc' },
-        });
-        targetEntityId = primaryEntity?.id;
-      }
-
-      if (targetEntityId) {
-        await this.seedDefaultAccounts(organizationId, targetEntityId);
-        accounts = await this.prisma.account.findMany({
-          where,
-          include: {
-            parent: {
-              select: { id: true, code: true, name: true },
-            },
-          },
-          orderBy: { code: 'asc' },
-        });
-      }
-    }
 
     return accounts;
   }
