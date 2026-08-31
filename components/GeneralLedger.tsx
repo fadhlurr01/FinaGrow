@@ -80,8 +80,9 @@ const GeneralLedger: React.FC = () => {
   );
 
   const handleOpenAdd = () => {
-    const defaultDr = apiAccounts.find(a => a.type === 'ASSET')?.id || state.coa.find(a => a.type === 'Asset')?.id || '';
-    const defaultCr = apiAccounts.find(a => a.type === 'REVENUE')?.id || state.coa.find(a => a.type === 'Revenue')?.id || '';
+    const available = apiAccounts.length > 0 ? apiAccounts : (isDemo ? state.coa : []);
+    const defaultDr = available.find(a => a.type === 'ASSET' || a.type === 'Asset')?.id || '';
+    const defaultCr = available.find(a => a.type === 'REVENUE' || a.type === 'Revenue')?.id || '';
 
     setFormData({
       description: '',
@@ -218,6 +219,8 @@ const GeneralLedger: React.FC = () => {
 
     return [];
   }, [apiEntries, apiAccounts, state.transactions, state.coa, isDemo]);
+
+  const availableAccounts = apiAccounts.length > 0 ? apiAccounts : (isDemo ? state.coa : []);
 
   return (
     <div className="container mx-auto space-y-6 font-sans">
@@ -493,7 +496,7 @@ const GeneralLedger: React.FC = () => {
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">{language === 'en' ? '-- Select Debit --' : '-- Pilih Debit --'}</option>
-                    {(apiAccounts.length > 0 ? apiAccounts : state.coa).map((acc) => (
+                    {availableAccounts.map((acc) => (
                       <option key={acc.id} value={acc.id}>
                         {acc.code} - {acc.name}
                       </option>
@@ -511,7 +514,7 @@ const GeneralLedger: React.FC = () => {
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">{language === 'en' ? '-- Select Credit --' : '-- Pilih Kredit --'}</option>
-                    {(apiAccounts.length > 0 ? apiAccounts : state.coa).map((acc) => (
+                    {availableAccounts.map((acc) => (
                       <option key={acc.id} value={acc.id}>
                         {acc.code} - {acc.name}
                       </option>

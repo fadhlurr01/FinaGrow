@@ -323,11 +323,40 @@ export const FMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const savedTheme = localStorage.getItem('theme') || 'light';
       const savedLang = (localStorage.getItem('fms_language') as 'id' | 'en') || 'id';
 
+      const isDemo = Boolean(
+        activeEmail && 
+        (
+          activeEmail.toLowerCase() === 'demo_admin@fms.com' ||
+          activeEmail.toLowerCase() === 'demo@fms.com' ||
+          activeEmail.toLowerCase() === 'demo_user@fms.com' ||
+          activeEmail.toLowerCase() === 'admin@finagrow.com'
+        )
+      );
+
+      if (activeEmail && !isDemo) {
+        return {
+          ...initial,
+          theme: savedTheme,
+          lang: savedLang,
+          currentUserEmail: activeEmail,
+          coa: [],
+          transactions: [],
+          invoices: [],
+          budgets: [],
+          assets: [],
+          inventory: [],
+          vendors: [],
+          projects: [],
+          payrollRuns: [],
+          entities: [],
+        };
+      }
+
       return {
         ...initial,
         theme: savedTheme,
         lang: savedLang,
-        currentUserEmail: activeEmail || undefined,
+        currentUserEmail: activeEmail || 'demo_admin@fms.com',
       };
     } catch {
       return initial;

@@ -134,27 +134,30 @@ const ChartOfAccounts: React.FC = () => {
         });
     }
 
-    if (state.coa && state.coa.length > 0) {
-      return state.coa;
+    if (isDemo) {
+      if (state.coa && state.coa.length > 0) {
+        return state.coa;
+      }
+      return [
+        { id: 'coa-1', code: '1001', name: 'Kas Kecil Cabang Jakarta', type: 'Asset', description: 'Kas kecil operasional HO', openingBalance: 15000000 },
+        { id: 'coa-2', code: '1002', name: 'Bank BCA Priority', type: 'Asset', description: 'Rekening bank utama perusahaan', openingBalance: 1250000000 },
+        { id: 'coa-3', code: '1003', name: 'Bank Mandiri Corporate', type: 'Asset', description: 'Rekening bank giro', openingBalance: 680000000 },
+        { id: 'coa-4', code: '1100', name: 'Piutang Usaha Korporat', type: 'Asset', description: 'Piutang institusi klien', openingBalance: 450000000 },
+        { id: 'coa-5', code: '1200', name: 'Persediaan Finished Goods', type: 'Asset', description: 'Persediaan barang utama', openingBalance: 1200000000 },
+        { id: 'coa-6', code: '1500', name: 'Aset Tetap Gedung Merdeka', type: 'Asset', description: 'Gedung pencakar langit', openingBalance: 5500000000 },
+        { id: 'coa-8', code: '2000', name: 'Utang Dagang Supplier', type: 'Liability', description: 'Utang bahan baku', openingBalance: 240000000 },
+        { id: 'coa-9', code: '2100', name: 'Utang PPN Masukan', type: 'Liability', description: 'PPN 11%', openingBalance: 75000000 },
+        { id: 'coa-10', code: '3000', name: 'Modal Ventura Seri-A', type: 'Equity', description: 'Modal disetor Investor', openingBalance: 8000000000 },
+        { id: 'coa-11', code: '4000', name: 'Pendapatan Kontrak Software', type: 'Revenue', description: 'Pendapatan subscription enterprise', openingBalance: 0 },
+        { id: 'coa-12', code: '4100', name: 'Pendapatan Lisensi API', type: 'Revenue', description: 'Pendapatan Integrasi API', openingBalance: 0 },
+        { id: 'coa-13', code: '5000', name: 'HPP Layanan Cloud', type: 'Expense', description: 'Biaya server AWS/Google Cloud', openingBalance: 0 },
+        { id: 'coa-14', code: '5100', name: 'Beban Gaji Direksi & Staf', type: 'Expense', description: 'Beban kompensasi tim', openingBalance: 0 },
+        { id: 'coa-15', code: '5200', name: 'Beban Sewa Data Center', type: 'Expense', description: 'Sewa fasilitas rack', openingBalance: 0 },
+        { id: 'coa-16', code: '5300', name: 'Beban Marketing & Promo', type: 'Expense', description: 'Iklan digital & PR', openingBalance: 0 },
+      ];
     }
 
-    return isDemo ? [
-      { id: 'coa-1', code: '1001', name: 'Kas Kecil Cabang Jakarta', type: 'Asset', description: 'Kas kecil operasional HO', openingBalance: 15000000 },
-      { id: 'coa-2', code: '1002', name: 'Bank BCA Priority', type: 'Asset', description: 'Rekening bank utama perusahaan', openingBalance: 1250000000 },
-      { id: 'coa-3', code: '1003', name: 'Bank Mandiri Corporate', type: 'Asset', description: 'Rekening bank giro', openingBalance: 680000000 },
-      { id: 'coa-4', code: '1100', name: 'Piutang Usaha Korporat', type: 'Asset', description: 'Piutang institusi klien', openingBalance: 450000000 },
-      { id: 'coa-5', code: '1200', name: 'Persediaan Finished Goods', type: 'Asset', description: 'Persediaan barang utama', openingBalance: 1200000000 },
-      { id: 'coa-6', code: '1500', name: 'Aset Tetap Gedung Merdeka', type: 'Asset', description: 'Gedung pencakar langit', openingBalance: 5500000000 },
-      { id: 'coa-8', code: '2000', name: 'Utang Dagang Supplier', type: 'Liability', description: 'Utang bahan baku', openingBalance: 240000000 },
-      { id: 'coa-9', code: '2100', name: 'Utang PPN Masukan', type: 'Liability', description: 'PPN 11%', openingBalance: 75000000 },
-      { id: 'coa-10', code: '3000', name: 'Modal Ventura Seri-A', type: 'Equity', description: 'Modal disetor Investor', openingBalance: 8000000000 },
-      { id: 'coa-11', code: '4000', name: 'Pendapatan Kontrak Software', type: 'Revenue', description: 'Pendapatan subscription enterprise', openingBalance: 0 },
-      { id: 'coa-12', code: '4100', name: 'Pendapatan Lisensi API', type: 'Revenue', description: 'Pendapatan Integrasi API', openingBalance: 0 },
-      { id: 'coa-13', code: '5000', name: 'HPP Layanan Cloud', type: 'Expense', description: 'Biaya server AWS/Google Cloud', openingBalance: 0 },
-      { id: 'coa-14', code: '5100', name: 'Beban Gaji Direksi & Staf', type: 'Expense', description: 'Beban kompensasi tim', openingBalance: 0 },
-      { id: 'coa-15', code: '5200', name: 'Beban Sewa Data Center', type: 'Expense', description: 'Sewa fasilitas rack', openingBalance: 0 },
-      { id: 'coa-16', code: '5300', name: 'Beban Marketing & Promo', type: 'Expense', description: 'Iklan digital & PR', openingBalance: 0 },
-    ] as any : [];
+    return state.coa || [];
   }, [apiAccounts, state.coa, isDemo]);
 
   // Filtered accounts list
