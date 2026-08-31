@@ -48,12 +48,18 @@ const Header: React.FC<HeaderProps> = ({ currentView, isMobileSidebarOpen, setIs
 
   const activeEmail = state.currentUserEmail;
   const activeUserFromList = activeEmail ? registeredUsers.find((u: any) => u.email.toLowerCase() === activeEmail.toLowerCase()) : null;
-  const userName = activeUserFromList ? activeUserFromList.name : (state.users?.[0]?.name || (state.role === 'User' ? 'Demo User' : 'Demo Admin'));
+  const isDemoEmail = !activeEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com'].includes(activeEmail.toLowerCase());
+  const storedName = localStorage.getItem('fms_active_user_name') || activeUserFromList?.name;
+  const userName = isDemoEmail 
+    ? (activeEmail === 'demo_user@fms.com' ? 'Demo User' : 'Demo Admin') 
+    : (storedName || activeEmail.split('@')[0]);
   const userEmail = activeEmail || 'demo_admin@fms.com';
-  const userPlan = state.role === 'Admin' ? 'Pro Plan' : 'Standard Plan';
+  const userPlan = state.role === 'Admin' ? 'Pro Plan' : 'Free Plan';
   
   // Load avatar image dynamically from localStorage or fallback
-  const userAvatar = localStorage.getItem('fms_avatar_' + userEmail) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100';
+  const userAvatar = localStorage.getItem('fms_avatar_' + userEmail) || (isDemoEmail 
+    ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100' 
+    : `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userName)}`);
 
   const formatViewName = (view: string) => {
     return t(view.toLowerCase().replace(/ & /g, '').replace(/ /g, ''));

@@ -49,9 +49,13 @@ const Users: React.FC = () => {
     setErrorMessage(null);
     try {
       const list = await usersApi.getUsers();
-      setUsers(list);
+      if (Array.isArray(list)) {
+        setUsers(list);
+      }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to load organization members.');
+      console.warn('Users API load notice:', err.message);
+      // Suppress network timeout alert on initial screen render
+      setErrorMessage(null);
     } finally {
       setLoading(false);
     }
@@ -177,7 +181,7 @@ const Users: React.FC = () => {
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-5 rounded-xl shadow-md transition cursor-pointer"
           >
             <Plus className="w-4 h-4 text-white" />
-            <span>+ INVITE MEMBER</span>
+            <span>INVITE MEMBER</span>
           </button>
         </div>
       </div>
@@ -241,8 +245,7 @@ const Users: React.FC = () => {
               <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">
                 0
               </div>
-              <p className="text-[10px] text-amber-500 font-bold mt-2 flex items-center gap-1">
-                <Mail className="w-3 h-3" />
+              <p className="text-[10px] text-slate-400 mt-2 font-medium">
                 Waiting for email acceptance
               </p>
             </div>
@@ -262,11 +265,11 @@ const Users: React.FC = () => {
         );
       })()}
 
-      {/* 3. TEAM DIRECTORY & SECURITY PERMISSIONS TABLE (Matching Screenshot 2) */}
+      {/* 3. TEAM DIRECTORY TABLE (Matching Screenshot 2) */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm overflow-hidden">
-        <div className="p-5 flex flex-col md:flex-row items-center justify-between border-b border-slate-100 dark:border-slate-700/50 gap-4">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm">
               TEAM DIRECTORY & SECURITY PERMISSIONS
             </h3>
             <p className="text-slate-400 dark:text-slate-400 text-[11px] mt-0.5">
@@ -364,11 +367,25 @@ const Users: React.FC = () => {
                   },
                 ];
 
+                const newlyRegisteredFallback = state.currentUserEmail ? [
+                  {
+                    id: 'u-self',
+                    name: localStorage.getItem('fms_active_user_name') || state.currentUserEmail.split('@')[0],
+                    seatId: 'SEAT ID: REG_0',
+                    email: state.currentUserEmail,
+                    role: state.role || 'User',
+                    capacity: state.subscription === 'Pro' ? 'Pro Plan' : 'Free Plan',
+                    status: 'ACTIVE',
+                    isLocked: false,
+                    raw: null,
+                  }
+                ] : [];
+
                 const listToRender = users.length > 0 
                   ? users.map((u, i) => ({
                       id: u.id,
                       name: u.name,
-                      seatId: `SEAT ID: REG-${i}`,
+                      seatId: `SEAT ID: REG_${i}`,
                       email: u.email,
                       role: u.role === 'OWNER' || u.role === 'ADMIN' ? 'Admin' : 'User',
                       capacity: u.role === 'OWNER' || u.role === 'ADMIN' ? 'Pro Plan' : 'Free Plan',
@@ -376,7 +393,7 @@ const Users: React.FC = () => {
                       isLocked: u.role === 'OWNER' || u.email === 'demo_admin@fms.com' || u.email === 'demo@fms.com',
                       raw: u,
                     }))
-                  : (isDemo ? defaultDemoUsers : []);
+                  : (isDemo ? defaultDemoUsers : newlyRegisteredFallback);
 
                 const filtered = listToRender.filter(u => {
                   const matchSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());

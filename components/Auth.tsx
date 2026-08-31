@@ -264,6 +264,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
         });
 
         localStorage.setItem('fms_active_user_email', normalEmail);
+        localStorage.setItem('fms_active_user_name', name.trim() || normalEmail.split('@')[0]);
         if (regRes.sessionToken) {
           localStorage.setItem('fms_session_token', regRes.sessionToken);
         }
@@ -279,7 +280,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           payload: { 
             email: normalEmail, 
             stateData: { 
-              role: 'Admin', 
+              role: 'User', 
               subscription: 'Free',
               activeEntityId: regRes.entity?.id || '',
               activeEntity: regRes.entity?.name || regRes.entity?.code || 'HQ-01',
@@ -290,17 +291,18 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
         setSuccess(language === 'id' ? 'Pendaftaran berhasil! Mengalihkan...' : 'Registration successful! Launching setup...');
         setTimeout(() => {
           setIsLoading(false);
-          onNavigate('subscription');
+          onNavigate('app');
         }, 800);
       } catch (err: any) {
         console.warn('Backend registration error, initializing local clean profile:', err.message);
         localStorage.setItem('fms_active_user_email', normalEmail);
+        localStorage.setItem('fms_active_user_name', name.trim() || normalEmail.split('@')[0]);
         dispatch({
           type: 'LOGIN_USER',
           payload: {
             email: normalEmail,
             stateData: {
-              role: 'Admin',
+              role: 'User',
               subscription: 'Free',
               activeEntityId: 'e-new',
               activeEntity: `${name.trim() || 'Cabang Baru'} (HQ)`,
@@ -316,7 +318,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
         setSuccess(language === 'id' ? 'Pendaftaran berhasil! Mengalihkan...' : 'Registration successful! Launching setup...');
         setTimeout(() => {
           setIsLoading(false);
-          onNavigate('subscription');
+          onNavigate('app');
         }, 800);
       }
     } else {
