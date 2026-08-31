@@ -82,7 +82,7 @@ const ChartOfAccounts: React.FC = () => {
       }
     } catch (err: any) {
       console.warn('Accounting API unavailable or unauthenticated, falling back to local COA state:', err.message);
-      setApiError(err.message);
+      setApiError(null);
     } finally {
       setIsLoading(false);
     }

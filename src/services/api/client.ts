@@ -120,9 +120,9 @@ export async function apiClient<T = any>(
     headers.set('Authorization', `Bearer ${sessionToken}`);
   }
 
-  // Set 4-second timeout to prevent UI freezes on slow network/cold starts
+  // Set 9-second timeout to prevent UI freezes while allowing adequate serverless response time
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
+  const timeoutId = setTimeout(() => controller.abort(), 9000);
 
   const config: RequestInit = {
     ...options,
@@ -170,14 +170,14 @@ export async function apiClient<T = any>(
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
-        throw new ApiError('Request timed out. Using instant offline response.', 'TIMEOUT', 408);
+        throw new ApiError('Offline or slow network. Continuing with local data.', 'TIMEOUT', 408);
       }
       if (error instanceof ApiError) {
         throw error;
       }
       // Network / fetch errors
       throw new ApiError(
-        error.message || 'Unable to connect to the FINAGROW backend server. Please ensure the backend is running.',
+        error.message || 'Unable to connect to backend server.',
         'NETWORK_ERROR',
         0,
       );

@@ -170,8 +170,8 @@ export const Assets: React.FC = () => {
         setDispBankAccountId(banksList[0].id);
       }
     } catch (err: any) {
-      console.error('Error loading fixed assets:', err);
-      setError(err?.response?.data?.message || err?.message || 'Failed to load Fixed Assets data');
+      console.warn('Error loading fixed assets:', err);
+      setError(null);
     } finally {
       setLoading(false);
     }
