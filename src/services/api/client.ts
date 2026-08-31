@@ -54,6 +54,10 @@ export async function ensureActiveEntityId(): Promise<string> {
   return stored && UUID_REGEX.test(stored) ? stored : '';
 }
 
+const apiCache = new Map<string, { data: any; timestamp: number }>();
+const inFlightRequests = new Map<string, Promise<any>>();
+const CACHE_TTL_MS = 60000; // 60 seconds TTL for fast instant loads
+
 export async function apiClient<T = any>(
   endpoint: string,
   options: RequestInit = {},
@@ -82,6 +86,22 @@ export async function apiClient<T = any>(
     // Fallback to rawUrl
   }
 
+  const isGet = !options.method || options.method.toUpperCase() === 'GET';
+  const cacheKey = `${url}:${localStorage.getItem('fms_active_organization_id') || ''}:${localStorage.getItem('fms_session_token') || ''}`;
+
+  // Return from in-memory cache if fresh (0ms instant response)
+  if (isGet) {
+    const cached = apiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data as T;
+    }
+
+    // Deduplicate in-flight requests
+    if (inFlightRequests.has(cacheKey)) {
+      return inFlightRequests.get(cacheKey);
+    }
+  }
+
   const headers = new Headers(options.headers || {});
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
@@ -100,47 +120,77 @@ export async function apiClient<T = any>(
     headers.set('Authorization', `Bearer ${sessionToken}`);
   }
 
+  // Set 4-second timeout to prevent UI freezes on slow network/cold starts
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000);
+
   const config: RequestInit = {
     ...options,
     headers,
+    signal: options.signal || controller.signal,
     credentials: 'include', // Ensures HttpOnly cookies are transmitted
   };
 
-  try {
-    const response = await fetch(url, config);
-    let json: ApiEnvelope<T>;
-
+  const fetchPromise = (async () => {
     try {
-      json = await response.json();
-    } catch (_) {
-      if (!response.ok) {
-        throw new ApiError(`HTTP ${response.status}: ${response.statusText}`, 'HTTP_ERROR', response.status);
-      }
-      return {} as T;
-    }
+      const response = await fetch(url, config);
+      clearTimeout(timeoutId);
+      let json: ApiEnvelope<T>;
 
-    if (!response.ok || json.success === false) {
-      if (response.status === 401 || response.status === 403) {
-        try {
-          localStorage.removeItem('fms_active_organization_id');
-          localStorage.removeItem('fms_active_entity_id');
-        } catch (_) {}
+      try {
+        json = await response.json();
+      } catch (_) {
+        if (!response.ok) {
+          throw new ApiError(`HTTP ${response.status}: ${response.statusText}`, 'HTTP_ERROR', response.status);
+        }
+        return {} as T;
       }
-      const errMessage = json.error?.message || `Request failed with status ${response.status}`;
-      const errCode = json.error?.code || `HTTP_${response.status}`;
-      throw new ApiError(errMessage, errCode, response.status, json.error?.details);
-    }
 
-    return json.data as T;
-  } catch (error: any) {
-    if (error instanceof ApiError) {
-      throw error;
+      if (!response.ok || json.success === false) {
+        if (response.status === 401 || response.status === 403) {
+          try {
+            localStorage.removeItem('fms_active_organization_id');
+            localStorage.removeItem('fms_active_entity_id');
+          } catch (_) {}
+        }
+        const errMessage = json.error?.message || `Request failed with status ${response.status}`;
+        const errCode = json.error?.code || `HTTP_${response.status}`;
+        throw new ApiError(errMessage, errCode, response.status, json.error?.details);
+      }
+
+      // Save successful GET result to cache
+      if (isGet) {
+        apiCache.set(cacheKey, { data: json.data, timestamp: Date.now() });
+      } else {
+        // Invalidate cache on mutations (POST, PUT, DELETE, PATCH)
+        apiCache.clear();
+      }
+
+      return json.data as T;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new ApiError('Request timed out. Using instant offline response.', 'TIMEOUT', 408);
+      }
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      // Network / fetch errors
+      throw new ApiError(
+        error.message || 'Unable to connect to the FINAGROW backend server. Please ensure the backend is running.',
+        'NETWORK_ERROR',
+        0,
+      );
+    } finally {
+      if (isGet) {
+        inFlightRequests.delete(cacheKey);
+      }
     }
-    // Network / fetch errors
-    throw new ApiError(
-      error.message || 'Unable to connect to the FINAGROW backend server. Please ensure the backend is running.',
-      'NETWORK_ERROR',
-      0,
-    );
+  })();
+
+  if (isGet) {
+    inFlightRequests.set(cacheKey, fetchPromise);
   }
+
+  return fetchPromise;
 }
