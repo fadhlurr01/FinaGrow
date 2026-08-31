@@ -77,7 +77,15 @@ const Dashboard: React.FC = () => {
     dispatch({ type: 'SET_VIEW', payload: 'Chart of Accounts' });
   };
 
-  const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+  const isDemo = Boolean(
+    state.currentUserEmail && 
+    (
+      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+    )
+  );
 
   const effectiveChartData = useMemo(() => {
     if (chartData.length > 0 && !isDemo) return chartData;

@@ -415,7 +415,15 @@ export const Inventory: React.FC = () => {
 
   const totalInventoryValuation = items.reduce((sum, i) => sum + (i.inventoryValue || 0), 0);
   const totalStockUnits = items.reduce((sum, i) => sum + (i.quantityOnHand || 0), 0);
-  const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+  const isDemo = Boolean(
+    state.currentUserEmail && 
+    (
+      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+    )
+  );
 
   const displayValuation = items.length > 0 ? totalInventoryValuation : (isDemo ? 1875000000 : 0);
   const displayItemsCount = items.length > 0 ? items.length : (isDemo ? 2 : 0);

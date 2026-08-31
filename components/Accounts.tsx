@@ -92,7 +92,15 @@ const ChartOfAccounts: React.FC = () => {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+  const isDemo = Boolean(
+    state.currentUserEmail && 
+    (
+      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+    )
+  );
 
   // Merge data source: prefer backend API accounts if fetched, otherwise fallback to FMSContext state
   const displayedAccounts = useMemo(() => {
@@ -126,7 +134,7 @@ const ChartOfAccounts: React.FC = () => {
         });
     }
 
-    if (state.coa && state.coa.length > 0 && isDemo) {
+    if (state.coa && state.coa.length > 0) {
       return state.coa;
     }
 

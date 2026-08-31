@@ -205,7 +205,15 @@ const Users: React.FC = () => {
 
       {/* 2. TOP 4 KPI CARDS (Matching Screenshot 2) */}
       {(() => {
-        const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+        const isDemo = Boolean(
+          state.currentUserEmail && 
+          (
+            state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+            state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+            state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+            state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+          )
+        );
 
         const totalMembers = users.length > 0 ? users.length : (isDemo ? 5 : 1);
         const activeMembers = users.length > 0 ? users.filter(u => u.status === 'Active' || (u as any).isActive !== false).length : (isDemo ? 5 : 1);
@@ -312,7 +320,15 @@ const Users: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+                const isDemo = Boolean(
+                  state.currentUserEmail && 
+                  (
+                    state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+                    state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+                    state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+                    state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+                  )
+                );
 
                 const defaultDemoUsers = [
                   {

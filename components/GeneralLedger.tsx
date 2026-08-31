@@ -55,11 +55,11 @@ const GeneralLedger: React.FC = () => {
         setLedgerEntries(ledgerData.value.entries);
       }
       if (entriesData.status === 'rejected') {
-        setApiError(entriesData.reason?.message || 'General Ledger API is currently offline.');
+        console.warn('General Ledger entries load notice:', entriesData.reason?.message);
       }
     } catch (err: any) {
-      console.warn('General Ledger API sync error:', err.message);
-      setApiError(err.message || 'General Ledger API is currently offline.');
+      console.warn('General Ledger API sync notice:', err.message);
+      setApiError(null);
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +68,16 @@ const GeneralLedger: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const isDemo = Boolean(
+    state.currentUserEmail && 
+    (
+      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+    )
+  );
 
   const handleOpenAdd = () => {
     const defaultDr = apiAccounts.find(a => a.type === 'ASSET')?.id || state.coa.find(a => a.type === 'Asset')?.id || '';
@@ -88,7 +98,7 @@ const GeneralLedger: React.FC = () => {
   const handleSaveJE = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.description || !formData.amount || !formData.drAccountId || !formData.crAccountId) {
-      alert(language === 'en' ? 'Please fill in all required fields' : 'Silakan isi semua bidang yang diperlukan');
+      alert(language === 'en' ? 'Please fill in all required fields' : 'Mohon lengkapi semua bidang yang wajib diisi');
       return;
     }
 
@@ -113,7 +123,7 @@ const GeneralLedger: React.FC = () => {
       });
       await fetchData();
     } catch (err: any) {
-      console.warn('Backend journal creation failed, saving to local state:', err.message);
+      console.warn('Backend journal creation fallback to local state:', err.message);
       const drAccount = apiAccounts.find(a => a.id === formData.drAccountId) || state.coa.find(a => a.id === formData.drAccountId);
       const crAccount = apiAccounts.find(a => a.id === formData.crAccountId) || state.coa.find(a => a.id === formData.crAccountId);
 
@@ -186,24 +196,28 @@ const GeneralLedger: React.FC = () => {
       }));
     }
 
-    return (state.transactions || []).map((tx, index) => {
-      const drAccount = state.coa.find(acc => acc.code === tx.dr)?.name || (tx.dr === '1002' ? 'Bank BCA Priority' : tx.dr === '5000' ? 'HPP Layanan Cloud' : tx.dr === '5100' ? 'Beban Gaji Direksi & Staf' : tx.dr === '5300' ? 'Beban Marketing & Promo' : tx.dr);
-      const crAccount = state.coa.find(acc => acc.code === tx.cr)?.name || (tx.cr === '1100' ? 'Piutang Usaha Korporat' : tx.cr === '1002' ? 'Bank BCA Priority' : tx.cr === '1003' ? 'Bank Mandiri Corporate' : tx.cr === '4000' ? 'Pendapatan Kontrak Software' : tx.cr);
-      const amount = Math.abs(tx.amount);
+    if (isDemo && state.transactions && state.transactions.length > 0) {
+      return state.transactions.map((tx, index) => {
+        const drAccount = state.coa.find(acc => acc.code === tx.dr)?.name || (tx.dr === '1002' ? 'Bank BCA Priority' : tx.dr === '5000' ? 'HPP Layanan Cloud' : tx.dr === '5100' ? 'Beban Gaji Direksi & Staf' : tx.dr === '5300' ? 'Beban Marketing & Promo' : tx.dr);
+        const crAccount = state.coa.find(acc => acc.code === tx.cr)?.name || (tx.cr === '1100' ? 'Piutang Usaha Korporat' : tx.cr === '1002' ? 'Bank BCA Priority' : tx.cr === '1003' ? 'Bank Mandiri Corporate' : tx.cr === '4000' ? 'Pendapatan Kontrak Software' : tx.cr);
+        const amount = Math.abs(tx.amount);
 
-      return {
-        id: tx.id,
-        entryNumber: `JE-${String(index + 1).padStart(4, '0')}`,
-        date: tx.date,
-        description: tx.description,
-        status: 'POSTED' as const,
-        lines: [
-          { accountName: `${tx.dr} - ${drAccount}`, debit: amount, credit: 0 },
-          { accountName: `${tx.cr} - ${crAccount}`, debit: 0, credit: amount },
-        ],
-      };
-    });
-  }, [apiEntries, apiAccounts, state.transactions, state.coa]);
+        return {
+          id: tx.id,
+          entryNumber: `JE-${String(index + 1).padStart(4, '0')}`,
+          date: tx.date,
+          description: tx.description,
+          status: 'POSTED' as const,
+          lines: [
+            { accountName: `${tx.dr} - ${drAccount}`, debit: amount, credit: 0 },
+            { accountName: `${tx.cr} - ${crAccount}`, debit: 0, credit: amount },
+          ],
+        };
+      });
+    }
+
+    return [];
+  }, [apiEntries, apiAccounts, state.transactions, state.coa, isDemo]);
 
   return (
     <div className="container mx-auto space-y-6 font-sans">

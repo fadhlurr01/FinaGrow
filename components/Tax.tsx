@@ -386,7 +386,15 @@ const Tax: React.FC = () => {
 
       {/* 2. Stat Cards (Matching Screenshot 3) */}
       {(() => {
-        const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+        const isDemo = Boolean(
+          state.currentUserEmail && 
+          (
+            state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+            state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+            state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+            state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+          )
+        );
         const displayOutputVat = (transactions.length > 0 || outputVatValue > 0) ? outputVatValue : (isDemo ? 117700000 : 0);
         const displayInputVat = (transactions.length > 0 || inputVatValue > 0) ? inputVatValue : (isDemo ? 10450000 : 0);
         const displayNetVat = (transactions.length > 0 || netVatValue !== 0) ? netVatValue : (isDemo ? 107250000 : 0);
@@ -497,7 +505,15 @@ const Tax: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+                const isDemo = Boolean(
+                  state.currentUserEmail && 
+                  (
+                    state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+                    state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+                    state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+                    state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+                  )
+                );
 
                 const defaultDemoRows = [
                   {

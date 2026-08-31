@@ -107,15 +107,17 @@ export class SessionAuthGuard implements CanActivate {
 
     // Attach active organization if header is passed or default to primary membership
     const targetOrgId = request.headers['x-organization-id'] as string;
-    if (targetOrgId) {
-      const match = sanitizedUser.memberships.find((m) => m.organizationId === targetOrgId);
-      if (match) {
-        request.tenant = match.organization;
-        request.tenantMember = match;
-      }
-    } else if (sanitizedUser.memberships.length > 0) {
-      request.tenant = sanitizedUser.memberships[0].organization;
-      request.tenantMember = sanitizedUser.memberships[0];
+    let matchedMembership = targetOrgId 
+      ? sanitizedUser.memberships.find((m) => m.organizationId === targetOrgId)
+      : null;
+
+    if (!matchedMembership && sanitizedUser.memberships.length > 0) {
+      matchedMembership = sanitizedUser.memberships[0];
+    }
+
+    if (matchedMembership) {
+      request.tenant = matchedMembership.organization;
+      request.tenantMember = matchedMembership;
     }
 
     return true;

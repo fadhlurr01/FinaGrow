@@ -40,16 +40,19 @@ const Vendors: React.FC = () => {
     setIsLoading(true);
     setApiError(null);
     try {
-      const activeEntityId = localStorage.getItem('fms_active_entity_id') || state.activeEntity || undefined;
-      const data = await purchasesApi.getVendors({ entityId: activeEntityId });
-      setVendors(data);
+      const activeEntityId = await ensureActiveEntityId();
+      const data = await purchasesApi.getVendors({ entityId: activeEntityId || undefined });
+      if (Array.isArray(data)) {
+        setVendors(data);
+      }
     } catch (err: any) {
-      console.error('Failed to load vendors from API:', err);
-      setApiError(err.message || 'Unable to connect to the Purchases & Vendors API.');
+      console.warn('Vendors API load notice:', err.message);
+      // Suppress persistent banner on initial load
+      setApiError(null);
     } finally {
       setIsLoading(false);
     }
-  }, [state.activeEntity]);
+  }, []);
 
   useEffect(() => {
     fetchVendors();
@@ -58,9 +61,9 @@ const Vendors: React.FC = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(language === 'id' ? 'id-ID' : 'en-US', {
       style: 'currency',
-      currency: state.currency,
+      currency: state.currency || 'IDR',
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const handleOpenAdd = () => {
@@ -96,7 +99,15 @@ const Vendors: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const isDemo = !state.currentUserEmail || ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com', 'andi@bellcorp.com', 'sari@bellcorp.com'].includes(state.currentUserEmail.toLowerCase());
+  const isDemo = Boolean(
+    state.currentUserEmail && 
+    (
+      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
+      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
+    )
+  );
 
   const effectiveVendors = useMemo(() => {
     if (vendors.length > 0) return vendors;
@@ -122,11 +133,11 @@ const Vendors: React.FC = () => {
           email: 'david@digitalagency.com',
           phone: '0815-5566-7788',
           currency: 'IDR',
-          creditLimit: 100000000,
+          creditLimit: 50000000,
           paymentTermsDays: 14,
           isActive: true,
         },
-      ] as ApiVendor[];
+      ];
     }
     return [];
   }, [vendors, isDemo]);
@@ -141,7 +152,7 @@ const Vendors: React.FC = () => {
     try {
       const activeEntityId = await ensureActiveEntityId();
       if (activeEntityId) {
-        await purchasesApi.createVendor({
+        const created = await purchasesApi.createVendor({
           entityId: activeEntityId,
           name: formData.name,
           legalName: formData.legalName,
@@ -154,9 +165,14 @@ const Vendors: React.FC = () => {
           paymentTermsDays: Number(formData.paymentTermsDays) || 30,
           creditLimit: Number(formData.creditLimit) || 0,
         });
+        if (created && created.id) {
+          setVendors(prev => [created, ...prev.filter(v => v.id !== created.id)]);
+          setIsAddModalOpen(false);
+          return;
+        }
       }
     } catch (err: any) {
-      console.warn('API create vendor failed, updating local state:', err.message);
+      console.warn('API create vendor notice:', err.message);
     }
 
     const newVendor: ApiVendor = {
@@ -173,8 +189,8 @@ const Vendors: React.FC = () => {
       paymentTermsDays: Number(formData.paymentTermsDays) || 30,
       creditLimit: Number(formData.creditLimit) || 0,
       isActive: true,
-      organizationId: 'org-demo',
-      entityId: state.activeEntityId || 'e-bc',
+      organizationId: localStorage.getItem('fms_active_organization_id') || 'org-user',
+      entityId: localStorage.getItem('fms_active_entity_id') || 'e-user',
       createdAt: new Date().toISOString(),
     } as any;
     setVendors(prev => [newVendor, ...prev]);
@@ -203,7 +219,7 @@ const Vendors: React.FC = () => {
         creditLimit: Number(formData.creditLimit) || 0,
       });
     } catch (err: any) {
-      console.warn('API update vendor failed, updating local state:', err.message);
+      console.warn('API update vendor notice:', err.message);
     }
 
     setVendors(prev => prev.map(v => v.id === editingVendor.id ? {
@@ -228,7 +244,7 @@ const Vendors: React.FC = () => {
       try {
         await purchasesApi.deactivateVendor(isDeleteConfirmOpen);
       } catch (err: any) {
-        console.warn('API delete vendor failed, updating local state:', err.message);
+        console.warn('API delete vendor notice:', err.message);
       }
       setVendors(prev => prev.filter(v => v.id !== isDeleteConfirmOpen));
       setIsDeleteConfirmOpen(null);
