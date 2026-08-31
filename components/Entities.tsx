@@ -225,22 +225,7 @@ const Entities: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const isDemo = Boolean(
-                  state.currentUserEmail && 
-                  (
-                    state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-                  )
-                );
-
-                const defaultDemoEntities = [
-                  { id: 'e-bc', code: 'BC', name: 'BellCorp Indonesia', baseCurrency: 'IDR', isActive: true },
-                  { id: 'e-ob', code: 'OB', name: 'OptiBiz Global', baseCurrency: 'USD', isActive: false },
-                ];
-
-                const list = entities.length > 0 ? entities : (isDemo ? defaultDemoEntities : []);
+                const list = entities;
 
                 if (list.length === 0) {
                   return (

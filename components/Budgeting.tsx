@@ -104,54 +104,9 @@ const Budgeting: React.FC = () => {
     return coaAccounts.filter(acc => acc.type === 'EXPENSE' || acc.type === 'REVENUE');
   }, [coaAccounts]);
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveBudgets = useMemo(() => {
-    if (budgets.length > 0) return budgets;
-    if (isDemo) {
-      return [
-        {
-          id: 'bg-1',
-          entityId: activeEntityId || 'e-bc',
-          accountId: 'coa-14',
-          period: selectedPeriod,
-          amount: 200000000,
-          actualSpent: 185000000,
-          remaining: 15000000,
-          utilization: 92.5,
-          status: 'ON_TRACK',
-          accountCode: '5100',
-          accountName: 'Beban Gaji Direksi & Staf',
-          account: { code: '5100', name: 'Beban Gaji Direksi & Staf', type: 'EXPENSE' },
-          notes: 'Alokasi penggajian seluruh tim',
-        },
-        {
-          id: 'bg-2',
-          entityId: activeEntityId || 'e-bc',
-          accountId: 'coa-16',
-          period: selectedPeriod,
-          amount: 75000000,
-          actualSpent: 50000000,
-          remaining: 25000000,
-          utilization: 66.7,
-          status: 'ON_TRACK',
-          accountCode: '5300',
-          accountName: 'Beban Marketing Campaign',
-          account: { code: '5300', name: 'Beban Marketing Campaign', type: 'EXPENSE' },
-          notes: 'Kampanye digital & promosi',
-        },
-      ] as any[];
-    }
-    return [];
-  }, [budgets, isDemo, selectedPeriod, activeEntityId]);
+    return budgets;
+  }, [budgets]);
 
   // Overall calculations
   const summary = useMemo(() => {

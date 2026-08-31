@@ -38,12 +38,13 @@ export class TenantGuard implements CanActivate {
         },
       });
 
-      if (membership) {
-        request.tenant = membership.organization;
-        request.tenantMember = membership;
-        return true;
+      if (!membership) {
+        throw new ForbiddenException('You do not have access to the requested organization.');
       }
-      // If client has stale org ID in header/param, fallback to user's valid membership below
+
+      request.tenant = membership.organization;
+      request.tenantMember = membership;
+      return true;
     }
 
     // Default: use the first active membership of user if no explicit org specified or targetOrgId was stale

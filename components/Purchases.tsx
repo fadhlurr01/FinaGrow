@@ -172,48 +172,19 @@ const Purchases: React.FC = () => {
     }).format(amount);
   };
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveBills = useMemo(() => {
-    if (bills.length > 0) return bills;
-    if (isDemo) {
-      return [
-        {
-          id: 'bill-aws-1',
-          billNumber: 'BILL-2026-VND01',
-          vendor: { name: 'AWS Indonesia', vendorCode: 'VND-001' },
-          billDate: '2026-08-29',
-          dueDate: '2026-09-12',
-          subtotal: 95000000,
-          taxAmount: 10450000,
-          totalAmount: 105450000,
-          amountDue: 0,
-          status: 'PAID',
-          postingStatus: 'POSTED',
-          lines: [],
-        }
-      ];
-    }
-    return [];
-  }, [bills, isDemo]);
+    return bills;
+  }, [bills]);
 
   // Metrics summary
   const metrics: Metric[] = useMemo(() => {
     const calcTotalPay = effectiveBills.filter((b: any) => b.status !== 'PAID').reduce((sum: number, b: any) => sum + Number(b.amountDue || b.totalAmount), 0);
-    const totalPay = effectiveBills.length > 0 ? (apSummary?.totalPayables ?? calcTotalPay) : 0;
+    const totalPay = apSummary?.totalPayables ?? calcTotalPay;
     const overduePay = apSummary?.totalOverdue ?? 0;
     const calcTotalPaid = effectiveBills.filter((b: any) => b.status === 'PAID').reduce((sum: number, b: any) => sum + Number(b.totalAmount), 0);
-    const totalPaid = effectiveBills.length > 0 ? (apSummary?.totalPaid ?? calcTotalPaid) : (isDemo ? 105450000 : 0);
+    const totalPaid = apSummary?.totalPaid ?? calcTotalPaid;
     const calcAvgBill = effectiveBills.length > 0 ? (effectiveBills.reduce((sum: number, b: any) => sum + Number(b.totalAmount), 0) / effectiveBills.length) : 0;
-    const avgBill = effectiveBills.length > 0 ? calcAvgBill : (isDemo ? 105450000 : 0);
+    const avgBill = apSummary ? (apSummary.totalPaid / (effectiveBills.length || 1)) : calcAvgBill;
 
     return [
       {
@@ -241,7 +212,7 @@ const Purchases: React.FC = () => {
         changeType: 'increase',
       },
     ];
-  }, [apSummary, effectiveBills, language, state.currency, isDemo]);
+  }, [apSummary, effectiveBills, language, state.currency]);
 
   // Bill creation form helpers
   const handleOpenAddBill = () => {

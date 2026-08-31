@@ -356,72 +356,9 @@ const CashBank: React.FC = () => {
     }
   };
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveAccounts = useMemo(() => {
-    if (accounts.length > 0) return accounts;
-    if (isDemo) {
-      return [
-        {
-          id: 'cb-petty-3',
-          code: '1001',
-          name: 'Kas Kecil Cabang Jakarta',
-          description: 'KAS KECIL OPERASIONAL HO',
-          type: 'CASH',
-          accountNumber: '**** **** 1001',
-          maskedAccountNumber: '**** **** 1001',
-          bankName: 'Kas Internal HO',
-          currency: 'IDR',
-          currentBalance: 15000000,
-          glBalance: 15000000,
-          isReconciled: true,
-          isActive: true,
-          coaAccount: { code: '1001', name: 'Kas Kecil Cabang Jakarta' },
-        },
-        {
-          id: 'cb-bca-1',
-          code: '1002',
-          name: 'Bank BCA Priority',
-          description: 'REKENING BANK UTAMA PERUSAHAAN',
-          type: 'BANK',
-          accountNumber: '**** **** 1002',
-          maskedAccountNumber: '**** **** 1002',
-          bankName: 'PT Bank Central Asia Tbk',
-          currency: 'IDR',
-          currentBalance: 1455048000,
-          glBalance: 1455048000,
-          isReconciled: true,
-          isActive: true,
-          coaAccount: { code: '1002', name: 'Bank BCA Priority' },
-        },
-        {
-          id: 'cb-mandiri-2',
-          code: '1003',
-          name: 'Bank Mandiri Corporate',
-          description: 'REKENING BANK GIRO',
-          type: 'BANK',
-          accountNumber: '**** **** 1003',
-          maskedAccountNumber: '**** **** 1003',
-          bankName: 'PT Bank Mandiri (Persero) Tbk',
-          currency: 'IDR',
-          currentBalance: 495000000,
-          glBalance: 495000000,
-          isReconciled: true,
-          isActive: true,
-          coaAccount: { code: '1003', name: 'Bank Mandiri Corporate' },
-        },
-      ];
-    }
-    return [];
-  }, [accounts, isDemo]);
+    return accounts;
+  }, [accounts]);
 
   const effectiveTotalCash = useMemo(() => {
     return effectiveAccounts.reduce((sum: number, a: any) => sum + (Number(a.glBalance) || 0), 0);
@@ -432,8 +369,8 @@ const CashBank: React.FC = () => {
       {/* Metrics Banner */}
       {(() => {
         const displayBalance = effectiveAccounts.length > 0 ? effectiveTotalCash : 0;
-        const displayInflow = isDemo ? 350048000 : (effectiveAccounts.length > 0 ? effectiveAccounts.reduce((s: number, a: any) => s + (Number(a.glBalance) > 0 ? Number(a.glBalance) : 0), 0) : 0);
-        const displayOutflow = isDemo ? 330000000 : 0;
+        const displayInflow = effectiveAccounts.length > 0 ? effectiveAccounts.reduce((s: number, a: any) => s + (Number(a.glBalance) > 0 ? Number(a.glBalance) : 0), 0) : 0;
+        const displayOutflow = 0;
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

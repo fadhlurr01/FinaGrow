@@ -19,7 +19,7 @@ export class SubscriptionsService {
       sub = await this.prisma.subscription.create({
         data: {
           organizationId,
-          planCode: 'PRO',
+          planCode: 'FREE',
           status: 'ACTIVE',
         },
       });

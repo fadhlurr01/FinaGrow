@@ -152,36 +152,6 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
     return localAuthTrans[language as 'en' | 'id'][key] || key;
   };
 
-  // Pre-seed default registered accounts into localStorage
-  useEffect(() => {
-    const defaultSeededUsers = [
-      { name: 'Andi Wijaya', phone: '081211112222', email: 'andi@bellcorp.com', password: '123456', status: 'Active' },
-      { name: 'Sari Indah', phone: '081322223333', email: 'sari@bellcorp.com', password: '123456', status: 'Active' },
-      { name: 'Demo Admin', phone: '08123456781', email: 'demo_admin@fms.com', password: '123456', isDemo: true, demoRole: 'Admin', status: 'Active' },
-      { name: 'Demo User', phone: '08123456782', email: 'demo_user@fms.com', password: '123456', isDemo: true, demoRole: 'User', status: 'Active' },
-      { name: 'Demo Account', phone: '08123456789', email: 'demo@fms.com', password: '123456', isDemo: true, demoRole: 'Admin', status: 'Active' }
-    ];
-    if (!localStorage.getItem('fms_registered_users')) {
-      localStorage.setItem('fms_registered_users', JSON.stringify(defaultSeededUsers));
-    }
-  }, []);
-
-  const getRegisteredUsers = () => {
-    try {
-      const data = localStorage.getItem('fms_registered_users');
-      if (data) return JSON.parse(data);
-    } catch (e) {
-      console.error("Error reading registered users", e);
-    }
-    return [
-      { name: 'Andi Wijaya', phone: '081211112222', email: 'andi@bellcorp.com', password: '123456', status: 'Active' },
-      { name: 'Sari Indah', phone: '081322223333', email: 'sari@bellcorp.com', password: '123456', status: 'Active' },
-      { name: 'Demo Admin', phone: '08123456781', email: 'demo_admin@fms.com', password: '123456', isDemo: true, demoRole: 'Admin', status: 'Active' },
-      { name: 'Demo User', phone: '08123456782', email: 'demo_user@fms.com', password: '123456', isDemo: true, demoRole: 'User', status: 'Active' },
-      { name: 'Demo Account', phone: '08123456789', email: 'demo@fms.com', password: '123456', isDemo: true, demoRole: 'Admin', status: 'Active' }
-    ];
-  };
-
   const handleImmediateDemoLogin = async (roleToUse: 'Admin' | 'User') => {
     setIsLoading(true);
     setError('');
@@ -190,11 +160,8 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
     const targetEmail = roleToUse === 'Admin' ? 'demo_admin@fms.com' : 'demo_user@fms.com';
 
     try {
-      // Authenticate via backend API (server sets session cookie)
+      // Authenticate via backend API (server sets HttpOnly session cookie)
       const authRes = await authApi.login({ email: targetEmail, password: '123456' });
-      if (authRes.sessionToken) {
-        localStorage.setItem('fms_session_token', authRes.sessionToken);
-      }
       if (authRes.organization?.id) {
         localStorage.setItem('fms_active_organization_id', authRes.organization.id);
       }
@@ -202,29 +169,30 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
         localStorage.setItem('fms_active_entity_id', authRes.entity.id);
       }
       localStorage.setItem('fms_active_user_email', targetEmail);
+      localStorage.setItem('fms_active_user_name', authRes.user.fullName || (roleToUse === 'Admin' ? 'Demo Admin' : 'Demo User'));
+      
+      const assignedRole = (authRes.role === 'OWNER' || authRes.role === 'ADMIN') ? 'Admin' : 'User';
+
       dispatch({
         type: 'LOGIN_USER',
         payload: {
           email: targetEmail,
           stateData: {
-            role: roleToUse,
+            role: assignedRole,
             subscription: 'Pro',
             activeEntityId: authRes.entity?.id || '',
-            activeEntity: authRes.entity?.name || authRes.entity?.code || 'BC-HO',
+            activeEntity: authRes.entity?.name || authRes.entity?.code || 'HQ-01',
           },
         },
       });
-    } catch (e) {
-      console.warn('Demo live backend login error, using local fallback:', e);
-      localStorage.setItem('fms_active_user_email', targetEmail);
-      dispatch({
-        type: 'LOGIN_USER',
-        payload: { email: targetEmail, stateData: { role: roleToUse, subscription: 'Pro' } }
-      });
-    }
 
-    setIsLoading(false);
-    onNavigate('app');
+      setIsLoading(false);
+      onNavigate('app');
+    } catch (e: any) {
+      console.error('Demo backend authentication failed:', e);
+      setError(e.message || (language === 'id' ? 'Gagal masuk akun demo. Pastikan server aktif.' : 'Failed to connect to demo account. Please ensure server is running.'));
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -265,9 +233,6 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
 
         localStorage.setItem('fms_active_user_email', normalEmail);
         localStorage.setItem('fms_active_user_name', name.trim() || normalEmail.split('@')[0]);
-        if (regRes.sessionToken) {
-          localStorage.setItem('fms_session_token', regRes.sessionToken);
-        }
         if (regRes.organization?.id) {
           localStorage.setItem('fms_active_organization_id', regRes.organization.id);
         }
@@ -280,7 +245,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           payload: { 
             email: normalEmail, 
             stateData: { 
-              role: 'User', 
+              role: 'Admin', // Owner of new organization
               subscription: 'Free',
               activeEntityId: regRes.entity?.id || '',
               activeEntity: regRes.entity?.name || regRes.entity?.code || 'HQ-01',
@@ -288,38 +253,15 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           }
         });
 
-        setSuccess(language === 'id' ? 'Pendaftaran berhasil! Mengalihkan...' : 'Registration successful! Launching setup...');
+        setSuccess(language === 'id' ? 'Pendaftaran berhasil! Mengalihkan...' : 'Registration successful! Launching workspace...');
         setTimeout(() => {
           setIsLoading(false);
           onNavigate('app');
         }, 800);
       } catch (err: any) {
-        console.warn('Backend registration error, initializing local clean profile:', err.message);
-        localStorage.setItem('fms_active_user_email', normalEmail);
-        localStorage.setItem('fms_active_user_name', name.trim() || normalEmail.split('@')[0]);
-        dispatch({
-          type: 'LOGIN_USER',
-          payload: {
-            email: normalEmail,
-            stateData: {
-              role: 'User',
-              subscription: 'Free',
-              activeEntityId: 'e-new',
-              activeEntity: `${name.trim() || 'Cabang Baru'} (HQ)`,
-              coa: [],
-              transactions: [],
-              invoices: [],
-              budgets: [],
-              assets: [],
-              inventory: [],
-            },
-          },
-        });
-        setSuccess(language === 'id' ? 'Pendaftaran berhasil! Mengalihkan...' : 'Registration successful! Launching setup...');
-        setTimeout(() => {
-          setIsLoading(false);
-          onNavigate('app');
-        }, 800);
+        console.error('Backend registration error:', err.message);
+        setError(err.message || (language === 'id' ? 'Pendaftaran gagal. Silakan periksa kembali data Anda.' : 'Registration failed. Please check your information and try again.'));
+        setIsLoading(false);
       }
     } else {
       // LOGIN WORKFLOW
@@ -330,9 +272,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
         });
 
         localStorage.setItem('fms_active_user_email', normalEmail);
-        if (authRes.sessionToken) {
-          localStorage.setItem('fms_session_token', authRes.sessionToken);
-        }
+        localStorage.setItem('fms_active_user_name', authRes.user.fullName || normalEmail.split('@')[0]);
         if (authRes.organization?.id) {
           localStorage.setItem('fms_active_organization_id', authRes.organization.id);
         }
@@ -356,19 +296,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
         setIsLoading(false);
         onNavigate('app');
       } catch (err: any) {
-        // Fallback for demo users
-        if (normalEmail.includes('demo') && password === '123456') {
-          const userRole = normalEmail === 'demo_user@fms.com' ? 'User' : 'Admin';
-          localStorage.setItem('fms_active_user_email', normalEmail);
-          dispatch({
-            type: 'LOGIN_USER',
-            payload: { email: normalEmail, stateData: { role: userRole, subscription: 'Pro' } }
-          });
-          setIsLoading(false);
-          onNavigate('app');
-          return;
-        }
-
+        console.error('Backend login error:', err.message);
         setError(err.message || t('errorIncorrectPassword'));
         setIsLoading(false);
       }

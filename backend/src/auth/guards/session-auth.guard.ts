@@ -25,29 +25,6 @@ export class SessionAuthGuard implements CanActivate {
     }
 
     if (!token) {
-      // Graceful fallback to default active demo user
-      const demoUser = await this.prisma.user.findFirst({
-        where: { isActive: true },
-        include: {
-          memberships: {
-            include: {
-              organization: true,
-            },
-          },
-        },
-      });
-
-      if (demoUser) {
-        const { passwordHash, ...sanitizedUser } = demoUser;
-        request.user = sanitizedUser;
-        request.sessionId = 'demo-session';
-        if (sanitizedUser.memberships.length > 0) {
-          request.tenant = sanitizedUser.memberships[0].organization;
-          request.tenantMember = sanitizedUser.memberships[0];
-        }
-        return true;
-      }
-
       throw new UnauthorizedException('Authentication required. No session token provided.');
     }
 
@@ -55,7 +32,7 @@ export class SessionAuthGuard implements CanActivate {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
     // 3. Find active session
-    let session = await this.prisma.session.findUnique({
+    const session = await this.prisma.session.findUnique({
       where: { tokenHash },
       include: {
         user: {
@@ -71,28 +48,6 @@ export class SessionAuthGuard implements CanActivate {
     });
 
     if (!session || session.expiresAt < new Date()) {
-      // Graceful fallback if session expired
-      const fallbackUser = await this.prisma.user.findFirst({
-        where: { isActive: true },
-        include: {
-          memberships: {
-            include: {
-              organization: true,
-            },
-          },
-        },
-      });
-
-      if (fallbackUser) {
-        const { passwordHash, ...sanitizedUser } = fallbackUser;
-        request.user = sanitizedUser;
-        request.sessionId = 'fallback-session';
-        if (sanitizedUser.memberships.length > 0) {
-          request.tenant = sanitizedUser.memberships[0].organization;
-          request.tenantMember = sanitizedUser.memberships[0];
-        }
-        return true;
-      }
       throw new UnauthorizedException('Invalid or expired session.');
     }
 
@@ -111,7 +66,7 @@ export class SessionAuthGuard implements CanActivate {
       ? sanitizedUser.memberships.find((m) => m.organizationId === targetOrgId)
       : null;
 
-    if (!matchedMembership && sanitizedUser.memberships.length > 0) {
+    if (!matchedMembership && !targetOrgId && sanitizedUser.memberships.length > 0) {
       matchedMembership = sanitizedUser.memberships[0];
     }
 

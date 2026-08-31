@@ -49,7 +49,8 @@ export class AuthController {
   ) {
     const result = await this.authService.register(dto, ip, userAgent);
     this.setSessionCookie(res, result.sessionToken, result.expiresAt);
-    return result;
+    const { sessionToken, expiresAt, ...publicData } = result;
+    return publicData;
   }
 
   @Post('login')
@@ -62,7 +63,8 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto, ip, userAgent);
     this.setSessionCookie(res, result.sessionToken, result.expiresAt);
-    return result;
+    const { sessionToken, expiresAt, ...publicData } = result;
+    return publicData;
   }
 
   @Post('logout')
@@ -79,7 +81,10 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(SessionAuthGuard)
-  async getMe(@CurrentUser('id') userId: string) {
-    return this.authService.getMe(userId);
+  async getMe(
+    @CurrentUser('id') userId: string,
+    @Headers('x-organization-id') targetOrgId?: string,
+  ) {
+    return this.authService.getMe(userId, targetOrgId);
   }
 }

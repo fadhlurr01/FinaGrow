@@ -58,6 +58,11 @@ const apiCache = new Map<string, { data: any; timestamp: number }>();
 const inFlightRequests = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 60000; // 60 seconds TTL for fast instant loads
 
+export function clearApiCache() {
+  apiCache.clear();
+  inFlightRequests.clear();
+}
+
 export async function apiClient<T = any>(
   endpoint: string,
   options: RequestInit = {},
@@ -87,7 +92,7 @@ export async function apiClient<T = any>(
   }
 
   const isGet = !options.method || options.method.toUpperCase() === 'GET';
-  const cacheKey = `${url}:${localStorage.getItem('fms_active_organization_id') || ''}:${localStorage.getItem('fms_session_token') || ''}`;
+  const cacheKey = `${url}:${localStorage.getItem('fms_active_organization_id') || ''}:${localStorage.getItem('fms_active_entity_id') || ''}`;
 
   // Return from in-memory cache if fresh (0ms instant response)
   if (isGet) {
@@ -112,12 +117,6 @@ export async function apiClient<T = any>(
   const activeOrgId = localStorage.getItem('fms_active_organization_id');
   if (activeOrgId && !headers.has('x-organization-id')) {
     headers.set('x-organization-id', activeOrgId);
-  }
-
-  // Include Bearer Authorization token if stored (cross-origin resilient)
-  const sessionToken = localStorage.getItem('fms_session_token');
-  if (sessionToken && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${sessionToken}`);
   }
 
   // Set 9-second timeout to prevent UI freezes while allowing adequate serverless response time
@@ -151,6 +150,7 @@ export async function apiClient<T = any>(
           try {
             localStorage.removeItem('fms_active_organization_id');
             localStorage.removeItem('fms_active_entity_id');
+            clearApiCache();
           } catch (_) {}
         }
         const errMessage = json.error?.message || `Request failed with status ${response.status}`;
@@ -170,7 +170,7 @@ export async function apiClient<T = any>(
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
-        throw new ApiError('Offline or slow network. Continuing with local data.', 'TIMEOUT', 408);
+        throw new ApiError('Request timed out. Please retry.', 'TIMEOUT', 408);
       }
       if (error instanceof ApiError) {
         throw error;

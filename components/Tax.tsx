@@ -384,20 +384,11 @@ const Tax: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Stat Cards (Matching Screenshot 3) */}
+      {/* 2. Stat Cards */}
       {(() => {
-        const isDemo = Boolean(
-          state.currentUserEmail && 
-          (
-            state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-            state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-            state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-            state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-          )
-        );
-        const displayOutputVat = (transactions.length > 0 || outputVatValue > 0) ? outputVatValue : (isDemo ? 117700000 : 0);
-        const displayInputVat = (transactions.length > 0 || inputVatValue > 0) ? inputVatValue : (isDemo ? 10450000 : 0);
-        const displayNetVat = (transactions.length > 0 || netVatValue !== 0) ? netVatValue : (isDemo ? 107250000 : 0);
+        const displayOutputVat = outputVatValue;
+        const displayInputVat = inputVatValue;
+        const displayNetVat = netVatValue;
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -505,49 +496,6 @@ const Tax: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const isDemo = Boolean(
-                  state.currentUserEmail && 
-                  (
-                    state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-                  )
-                );
-
-                const defaultDemoRows = [
-                  {
-                    date: '2026-08-29',
-                    docNo: 'BILL-2026-VND01',
-                    party: 'AWS Indonesia',
-                    taxType: 'INPUT VAT',
-                    typeBadge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
-                    subtotal: 95000000,
-                    rate: '11%',
-                    taxAmount: 10450000,
-                  },
-                  {
-                    date: '2026-08-26',
-                    docNo: 'INV-2026-ENT02',
-                    party: 'Kementerian Keuangan RI',
-                    taxType: 'OUTPUT VAT',
-                    typeBadge: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
-                    subtotal: 720000000,
-                    rate: '11%',
-                    taxAmount: 79200000,
-                  },
-                  {
-                    date: '2026-08-21',
-                    docNo: 'INV-2026-ENT01',
-                    party: 'PT. Astra International',
-                    taxType: 'OUTPUT VAT',
-                    typeBadge: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
-                    subtotal: 350000000,
-                    rate: '11%',
-                    taxAmount: 38500000,
-                  },
-                ];
-
                 const rowsToRender = transactions.length > 0 
                   ? transactions.map(t => ({
                       date: new Date(t.transactionDate).toISOString().split('T')[0],
@@ -559,7 +507,7 @@ const Tax: React.FC = () => {
                       rate: `${(Number(t.legalRate) * 100).toFixed(0)}%`,
                       taxAmount: Number(t.taxAmount) || 0,
                     }))
-                  : (isDemo ? defaultDemoRows : []);
+                  : [];
 
                 const filtered = rowsToRender.filter(row => {
                   const matchSearch = row.docNo.toLowerCase().includes(searchTerm.toLowerCase()) || row.party.toLowerCase().includes(searchTerm.toLowerCase());

@@ -69,18 +69,8 @@ const GeneralLedger: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const handleOpenAdd = () => {
-    const available = apiAccounts.length > 0 ? apiAccounts : (isDemo ? state.coa : []);
+    const available = apiAccounts;
     const defaultDr = available.find(a => a.type === 'ASSET' || a.type === 'Asset')?.id || '';
     const defaultCr = available.find(a => a.type === 'REVENUE' || a.type === 'Revenue')?.id || '';
 
@@ -187,7 +177,7 @@ const GeneralLedger: React.FC = () => {
           const rawId = (l.accountId || '').replace(/^AC_/, '');
           const acc = l.account || apiAccounts.find(a => a.id === l.accountId || a.code === rawId) || state.coa.find(a => a.id === l.accountId || a.code === rawId);
           const code = acc?.code || rawId || '1001';
-          const name = acc?.name || (code === '1001' ? 'Kas Kecil Cabang Jakarta' : code === '1002' ? 'Bank BCA Priority' : code === '1003' ? 'Bank Mandiri Corporate' : code === '1100' ? 'Piutang Usaha Korporat' : code === '2000' ? 'Utang Dagang Supplier' : code === '3000' ? 'Modal Ventura Seri-A' : code === '4000' || code === '4100' ? 'Pendapatan Kontrak Software' : code === '5000' ? 'HPP Layanan Cloud' : code === '5100' ? 'Beban Gaji Direksi & Staf' : code === '5300' ? 'Beban Marketing & Promo' : 'Akun Buku Besar');
+          const name = acc?.name || 'Akun Buku Besar';
           return {
             accountName: `${code} - ${name}`,
             debit: Number(l.debit) || 0,
@@ -197,30 +187,10 @@ const GeneralLedger: React.FC = () => {
       }));
     }
 
-    if (isDemo && state.transactions && state.transactions.length > 0) {
-      return state.transactions.map((tx, index) => {
-        const drAccount = state.coa.find(acc => acc.code === tx.dr)?.name || (tx.dr === '1002' ? 'Bank BCA Priority' : tx.dr === '5000' ? 'HPP Layanan Cloud' : tx.dr === '5100' ? 'Beban Gaji Direksi & Staf' : tx.dr === '5300' ? 'Beban Marketing & Promo' : tx.dr);
-        const crAccount = state.coa.find(acc => acc.code === tx.cr)?.name || (tx.cr === '1100' ? 'Piutang Usaha Korporat' : tx.cr === '1002' ? 'Bank BCA Priority' : tx.cr === '1003' ? 'Bank Mandiri Corporate' : tx.cr === '4000' ? 'Pendapatan Kontrak Software' : tx.cr);
-        const amount = Math.abs(tx.amount);
-
-        return {
-          id: tx.id,
-          entryNumber: `JE-${String(index + 1).padStart(4, '0')}`,
-          date: tx.date,
-          description: tx.description,
-          status: 'POSTED' as const,
-          lines: [
-            { accountName: `${tx.dr} - ${drAccount}`, debit: amount, credit: 0 },
-            { accountName: `${tx.cr} - ${crAccount}`, debit: 0, credit: amount },
-          ],
-        };
-      });
-    }
-
     return [];
-  }, [apiEntries, apiAccounts, state.transactions, state.coa, isDemo]);
+  }, [apiEntries, apiAccounts]);
 
-  const availableAccounts = apiAccounts.length > 0 ? apiAccounts : (isDemo ? state.coa : []);
+  const availableAccounts = apiAccounts;
 
   return (
     <div className="container mx-auto space-y-6 font-sans">

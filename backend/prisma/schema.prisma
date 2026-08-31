@@ -2370,7 +2370,7 @@ model PayrollRun {
 model Subscription {
   id             String       @id @default(uuid())
   organizationId String       @unique @map("organization_id")
-  planCode       String       @default("PRO") @map("plan_code") @db.VarChar(50) // "FREE", "STARTER", "PRO", "ENTERPRISE"
+  planCode       String       @default("FREE") @map("plan_code") @db.VarChar(50) // "FREE", "STARTER", "PRO", "ENTERPRISE"
   status         String       @default("ACTIVE") @db.VarChar(50) // "ACTIVE", "TRIAL", "EXPIRED", "CANCELLED"
   startDate      DateTime     @default(now()) @map("start_date")
   endDate        DateTime?    @map("end_date")

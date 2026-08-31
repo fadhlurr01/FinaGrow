@@ -50,6 +50,9 @@ describe('AuthService (Phase 1)', () => {
       entity: {
         create: jest.fn(),
       },
+      subscription: {
+        create: jest.fn(),
+      },
       session: {
         create: jest.fn(),
         findUnique: jest.fn(),
@@ -147,7 +150,7 @@ describe('AuthService (Phase 1)', () => {
 
       expect(result.user.email).toBe(mockUser.email);
       expect(result.sessionToken).toBeDefined();
-      expect(result.activeRole).toBe('OWNER');
+      expect(result.role).toBe('OWNER');
       expect(auditService.log).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'USER_LOGIN' }),
       );

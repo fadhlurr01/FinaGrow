@@ -29,6 +29,20 @@ async function main() {
 
   console.log(`Verified Organization: ${organization.name} (${organization.id})`);
 
+  // Explicitly seed PRO subscription for Demo Organization
+  await prisma.subscription.upsert({
+    where: { organizationId: organization.id },
+    update: {
+      planCode: 'PRO',
+      status: 'ACTIVE',
+    },
+    create: {
+      organizationId: organization.id,
+      planCode: 'PRO',
+      status: 'ACTIVE',
+    },
+  });
+
   // 2. Create Initial Administrator & Demo Users
   const passwordHash = await bcrypt.hash('123456', 10);
   

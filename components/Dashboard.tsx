@@ -77,146 +77,19 @@ const Dashboard: React.FC = () => {
     dispatch({ type: 'SET_VIEW', payload: 'Chart of Accounts' });
   };
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveChartData = useMemo(() => {
-    if (chartData.length > 0 && !isDemo) return chartData;
-    if (isDemo) {
-      return [
-        { name: 'Jan', revenue: 450000000, expenses: 280000000 },
-        { name: 'Feb', revenue: 520000000, expenses: 310000000 },
-        { name: 'Mar', revenue: 610000000, expenses: 350000000 },
-        { name: 'Apr', revenue: 580000000, expenses: 320000000 },
-        { name: 'May', revenue: 720000000, expenses: 390000000 },
-        { name: 'Jun', revenue: 810000000, expenses: 430000000 },
-        { name: 'Jul', revenue: 890000000, expenses: 460000000 },
-        { name: 'Aug', revenue: 950000000, expenses: 480000000 },
-        { name: 'Sep', revenue: 880000000, expenses: 440000000 },
-        { name: 'Oct', revenue: 920000000, expenses: 470000000 },
-        { name: 'Nov', revenue: 980000000, expenses: 490000000 },
-        { name: 'Dec', revenue: 1103500000, expenses: 541000000 },
-      ];
-    }
-    return [];
-  }, [chartData, isDemo]);
+    return chartData;
+  }, [chartData]);
 
   const effectiveWatchlist = useMemo(() => {
-    if (summary?.accountWatchlist && summary.accountWatchlist.length > 0 && !isDemo) {
-      return summary.accountWatchlist;
-    }
-    if (isDemo) {
-      return [
-        { id: 'w-1', code: '1002', name: 'Bank BCA Priority', type: 'ASSET', currentBalance: 1250000000 },
-        { id: 'w-2', code: '1003', name: 'Bank Mandiri Account', type: 'ASSET', currentBalance: 495000000 },
-        { id: 'w-3', code: '1100', name: 'Accounts Receivable', type: 'ASSET', currentBalance: 100000000 },
-        { id: 'w-4', code: '2000', name: 'Accounts Payable', type: 'LIABILITY', currentBalance: 240000000 },
-      ];
-    }
-    return [];
-  }, [summary, isDemo]);
+    return summary?.accountWatchlist || [];
+  }, [summary]);
 
   const effectiveRecentTransactions = useMemo(() => {
-    if (recentTransactions.length > 0 && !isDemo) return recentTransactions;
-    if (isDemo) {
-      return [
-        {
-          id: 'tx-1',
-          date: '2026-08-31',
-          description: 'Terima Termin 1 PT. Astra International',
-          type: 'income' as const,
-          category: 'Sales',
-          amount: 350000000,
-          status: 'Completed' as const,
-          dr: '1002',
-          cr: '1100',
-        },
-        {
-          id: 'tx-2',
-          date: '2026-08-30',
-          description: 'Bayar Cloud Server AWS',
-          type: 'expense' as const,
-          category: 'Operational',
-          amount: 55000000,
-          status: 'Completed' as const,
-          dr: '5000',
-          cr: '1002',
-        },
-        {
-          id: 'tx-3',
-          date: '2026-08-29',
-          description: 'Distribusi Payroll Bulanan Direksi',
-          type: 'expense' as const,
-          category: 'Payroll',
-          amount: 185000000,
-          status: 'Completed' as const,
-          dr: '5100',
-          cr: '1003',
-        },
-        {
-          id: 'tx-4',
-          date: '2026-08-27',
-          description: 'SaaS Agreement - Singapore Corp',
-          type: 'income' as const,
-          category: 'Sales',
-          amount: 48000,
-          status: 'Completed' as const,
-          dr: '1002',
-          cr: '4000',
-        },
-        {
-          id: 'tx-5',
-          date: '2026-08-25',
-          description: 'Bayar Kampanye Digital agency',
-          type: 'expense' as const,
-          category: 'Marketing',
-          amount: 50000000,
-          status: 'Completed' as const,
-          dr: '5300',
-          cr: '1002',
-        },
-      ];
-    }
-    return [];
-  }, [recentTransactions, isDemo]);
+    return recentTransactions;
+  }, [recentTransactions]);
 
   const metrics: Metric[] = useMemo(() => {
-    if (isDemo) {
-      return [
-        {
-          title: t('totalRevenue') || 'Total Revenue',
-          value: formatCurrency(8423500000),
-          change: '+18.4%',
-          changeType: 'increase',
-        },
-        {
-          title: t('totalExpenses') || 'Total Expenses',
-          value: formatCurrency(4281000000),
-          change: '+12.3%',
-          changeType: 'increase',
-        },
-        {
-          title: t('netProfit') || 'Net Profit',
-          value: formatCurrency(4142500000),
-          change: '+24.8%',
-          changeType: 'increase',
-        },
-        {
-          title: t('cashBalance') || 'Cash & Bank Balance',
-          value: formatCurrency(1965048000),
-          change: '-4.2%',
-          changeType: 'decrease',
-        },
-      ];
-    }
-
     if (summary) {
       return [
         {
@@ -272,7 +145,7 @@ const Dashboard: React.FC = () => {
         changeType: 'increase',
       },
     ];
-  }, [summary, isDemo, state.currency, t, language]);
+  }, [summary, state.currency, t, language]);
 
   return (
     <div className="container mx-auto space-y-6 pb-12">

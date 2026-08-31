@@ -46,13 +46,14 @@ export class AuthService {
     const randomSuffix = Math.random().toString(36).substring(2, 6);
     const slug = `${baseSlug || 'org'}-${randomSuffix}`;
 
-    // 4. Create User, Organization, Membership, Default Entity, and Session in transaction
+    // 4. Create User, Organization, Membership, Default Entity, Subscription, and Session in transaction
     const result = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           email,
           passwordHash,
           fullName: dto.fullName.trim(),
+          phone: dto.phoneNumber?.trim() || null,
           isActive: true,
         },
       });
@@ -84,6 +85,15 @@ export class AuthService {
           country: 'ID',
           timezone: 'Asia/Jakarta',
           isActive: true,
+        },
+      });
+
+      // Explicitly create FREE Subscription for real registered user
+      await tx.subscription.create({
+        data: {
+          organizationId: organization.id,
+          planCode: 'FREE',
+          status: 'ACTIVE',
         },
       });
 
@@ -119,8 +129,19 @@ export class AuthService {
 
     return {
       user: sanitizedUser,
-      organization: result.organization,
-      entity: result.defaultEntity,
+      organization: {
+        id: result.organization.id,
+        name: result.organization.name,
+        slug: result.organization.slug,
+        baseCurrency: result.organization.baseCurrency,
+      },
+      entity: {
+        id: result.defaultEntity.id,
+        organizationId: result.defaultEntity.organizationId,
+        name: result.defaultEntity.name,
+        code: result.defaultEntity.code,
+        baseCurrency: result.defaultEntity.baseCurrency,
+      },
       role: Role.OWNER,
       sessionToken: result.rawToken,
       expiresAt: result.expiresAt,
@@ -130,13 +151,20 @@ export class AuthService {
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const email = dto.email.trim().toLowerCase();
 
-    // 1. Find user with memberships
+    // 1. Find user with memberships and active entities
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
         memberships: {
           include: {
-            organization: true,
+            organization: {
+              include: {
+                entities: {
+                  where: { isActive: true },
+                  orderBy: { createdAt: 'asc' },
+                },
+              },
+            },
           },
         },
       },
@@ -170,6 +198,8 @@ export class AuthService {
     });
 
     const primaryMembership = user.memberships[0];
+    const primaryOrg = primaryMembership?.organization;
+    const primaryEntity = primaryOrg?.entities?.[0] || null;
 
     // 4. Log Audit
     if (primaryMembership) {
@@ -187,10 +217,22 @@ export class AuthService {
 
     return {
       user: sanitizedUser,
+      organization: primaryOrg ? {
+        id: primaryOrg.id,
+        name: primaryOrg.name,
+        slug: primaryOrg.slug,
+        baseCurrency: primaryOrg.baseCurrency,
+      } : null,
+      entity: primaryEntity ? {
+        id: primaryEntity.id,
+        organizationId: primaryEntity.organizationId,
+        name: primaryEntity.name,
+        code: primaryEntity.code,
+        baseCurrency: primaryEntity.baseCurrency,
+      } : null,
+      role: primaryMembership?.role || Role.VIEWER,
       sessionToken: rawToken,
       expiresAt,
-      activeOrganization: primaryMembership?.organization || null,
-      activeRole: primaryMembership?.role || Role.VIEWER,
     };
   }
 
@@ -213,7 +255,7 @@ export class AuthService {
     return { message: 'Logged out successfully.' };
   }
 
-  async getMe(userId: string) {
+  async getMe(userId: string, targetOrgId?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -223,6 +265,7 @@ export class AuthService {
               include: {
                 entities: {
                   where: { isActive: true },
+                  orderBy: { createdAt: 'asc' },
                 },
               },
             },
@@ -235,7 +278,32 @@ export class AuthService {
       throw new UnauthorizedException('User not found.');
     }
 
+    const primaryMembership = (targetOrgId 
+      ? user.memberships.find((m) => m.organizationId === targetOrgId)
+      : null) || user.memberships[0];
+
+    const primaryOrg = primaryMembership?.organization;
+    const primaryEntity = primaryOrg?.entities?.[0] || null;
+
     const { passwordHash: _, ...sanitizedUser } = user;
-    return sanitizedUser;
+
+    return {
+      user: sanitizedUser,
+      organization: primaryOrg ? {
+        id: primaryOrg.id,
+        name: primaryOrg.name,
+        slug: primaryOrg.slug,
+        baseCurrency: primaryOrg.baseCurrency,
+      } : null,
+      entity: primaryEntity ? {
+        id: primaryEntity.id,
+        organizationId: primaryEntity.organizationId,
+        name: primaryEntity.name,
+        code: primaryEntity.code,
+        baseCurrency: primaryEntity.baseCurrency,
+      } : null,
+      role: primaryMembership?.role || Role.VIEWER,
+      memberships: sanitizedUser.memberships,
+    };
   }
 }

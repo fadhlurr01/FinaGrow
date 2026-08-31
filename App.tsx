@@ -36,13 +36,29 @@ import { LanguageProvider } from './context/LanguageContext';
 import { useLocalization } from './hooks/useLocalization';
 import { authApi } from './src/services/api/authApi';
 
+import { subscriptionApi } from './src/services/api/subscriptionApi';
+import { clearApiCache } from './src/services/api/client';
+
 export const ThemeContext = React.createContext({
   theme: 'light',
   toggleTheme: () => {},
 });
 
+export type AuthStatus = 'CHECKING' | 'AUTHENTICATED' | 'UNAUTHENTICATED';
+export const AuthContext = React.createContext<{
+  authStatus: AuthStatus;
+  setAuthStatus: (status: AuthStatus) => void;
+  refreshAuth: () => Promise<void>;
+}>({
+  authStatus: 'CHECKING',
+  setAuthStatus: () => {},
+  refreshAuth: async () => {},
+});
+export const useAuth = () => useContext(AuthContext);
+
 const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { state, dispatch } = useFMS();
+  const { authStatus, setAuthStatus } = useAuth();
   const { language, t } = useLocalization();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
@@ -51,28 +67,15 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Auto-sync active organization & entity IDs if missing
-  useEffect(() => {
-    const currentEntityId = localStorage.getItem('fms_active_entity_id');
-    const currentOrgId = localStorage.getItem('fms_active_organization_id');
-    if (!currentEntityId || !currentOrgId || !state.activeEntityId) {
-      authApi.getMe().then((res: any) => {
-        if (res?.entity?.id) {
-          localStorage.setItem('fms_active_entity_id', res.entity.id);
-          dispatch({
-            type: 'SET_ENTITY',
-            payload: {
-              activeEntity: res.entity.name || res.entity.code || 'HQ-01',
-              activeEntityId: res.entity.id,
-            },
-          });
-        }
-        if (res?.organization?.id) {
-          localStorage.setItem('fms_active_organization_id', res.organization.id);
-        }
-      }).catch(() => null);
-    }
-  }, [state.activeEntityId, dispatch]);
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (_) {}
+    clearApiCache();
+    dispatch({ type: 'LOGOUT_USER' });
+    setAuthStatus('UNAUTHENTICATED');
+    navigate('/login');
+  };
 
   // Scroll to top on navigation path changes
   useEffect(() => {
@@ -193,10 +196,7 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
           <button
             type="button"
-            onClick={() => {
-              dispatch({ type: 'LOGOUT_USER' });
-              navigate('/');
-            }}
+            onClick={handleLogout}
             className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
           >
             {language === 'id' ? 'Keluar Beranda' : 'Exit to Home'}
@@ -262,10 +262,7 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
           };
           navigate(pathMap[view] || '/dashboard');
         }} 
-        onLogout={() => { 
-          dispatch({ type: 'LOGOUT_USER' }); 
-          navigate('/'); 
-        }} 
+        onLogout={handleLogout} 
         isMobileSidebarOpen={isMobileSidebarOpen}
         setIsMobileSidebarOpen={setIsMobileSidebarOpen}
       />
@@ -274,10 +271,7 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
           currentView={currentView} 
           isMobileSidebarOpen={isMobileSidebarOpen}
           setIsMobileSidebarOpen={setIsMobileSidebarOpen}
-          onLogout={() => { 
-            dispatch({ type: 'LOGOUT_USER' }); 
-            navigate('/'); 
-          }}
+          onLogout={handleLogout}
         />
         <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-6 pb-24 md:pb-6">
           {children}
@@ -376,8 +370,7 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => {
-                  dispatch({ type: 'LOGOUT_USER' });
-                  navigate('/');
+                  handleLogout();
                   setIsMoreMenuOpen(false);
                 }}
                 className="w-full flex items-center justify-center gap-2 text-rose-500 hover:bg-rose-500/10 p-3 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer"
@@ -403,17 +396,92 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { state } = useFMS();
-  if (!state.currentUserEmail) {
+  const { authStatus } = useAuth();
+
+  if (authStatus === 'CHECKING') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-600 rounded-full animate-spin" />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 animate-pulse">
+            Authenticating Workspace...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'UNAUTHENTICATED') {
     return <Navigate to="/login" replace />;
   }
+
   return <LayoutContainer>{children}</LayoutContainer>;
 };
 
 const AppContent: React.FC = () => {
-  const { state } = useFMS();
+  const { state, dispatch } = useFMS();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('CHECKING');
+
+  const refreshAuth = useCallback(async () => {
+    try {
+      const res = await authApi.getMe();
+      if (res && res.user) {
+        if (res.organization?.id) {
+          localStorage.setItem('fms_active_organization_id', res.organization.id);
+        }
+        if (res.entity?.id) {
+          localStorage.setItem('fms_active_entity_id', res.entity.id);
+        }
+        localStorage.setItem('fms_active_user_email', res.user.email);
+        localStorage.setItem('fms_active_user_name', res.user.fullName || res.user.email.split('@')[0]);
+
+        let subPlan: 'Free' | 'Pro' = 'Free';
+        try {
+          const sub = await subscriptionApi.getCurrentSubscription();
+          if (sub && (sub.planCode === 'PRO' || sub.planCode === 'ENTERPRISE')) {
+            subPlan = 'Pro';
+          }
+        } catch (_) {}
+
+        const assignedRole = (res.role === 'OWNER' || res.role === 'ADMIN') ? 'Admin' : 'User';
+
+        dispatch({
+          type: 'LOGIN_USER',
+          payload: {
+            email: res.user.email,
+            stateData: {
+              role: assignedRole,
+              subscription: subPlan,
+              activeEntityId: res.entity?.id || '',
+              activeEntity: res.entity?.name || res.entity?.code || 'HQ-01',
+              entities: res.entity ? [{
+                id: res.entity.id,
+                code: res.entity.code,
+                name: res.entity.name,
+                currency: res.entity.baseCurrency || 'IDR',
+              }] : [],
+            },
+          },
+        });
+        setAuthStatus('AUTHENTICATED');
+      } else {
+        throw new Error('No user authenticated');
+      }
+    } catch (_) {
+      clearApiCache();
+      localStorage.removeItem('fms_active_user_email');
+      localStorage.removeItem('fms_active_organization_id');
+      localStorage.removeItem('fms_active_entity_id');
+      dispatch({ type: 'LOGOUT_USER' });
+      setAuthStatus('UNAUTHENTICATED');
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    refreshAuth();
+  }, [refreshAuth]);
 
   const toggleTheme = useCallback(() => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -426,6 +494,7 @@ const AppContent: React.FC = () => {
   }, [theme]);
 
   const themeValue = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
+  const authValue = useMemo(() => ({ authStatus, setAuthStatus, refreshAuth }), [authStatus, refreshAuth]);
 
   // Navigate helper to map landing/auth components onNavigate callbacks
   const handleLandingNavigate = (targetState: 'landing' | 'auth' | 'subscription' | 'app', authMode?: 'login' | 'register') => {
@@ -460,38 +529,40 @@ const AppContent: React.FC = () => {
 
   return (
     <ThemeContext.Provider value={themeValue}>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage onNavigate={handleLandingNavigate} />} />
-        <Route path="/login" element={<Auth mode="login" onNavigate={handleAuthNavigate} />} />
-        <Route path="/register" element={<Auth mode="register" onNavigate={handleAuthNavigate} />} />
-        <Route path="/subscription" element={
-          state.currentUserEmail ? <Subscription onNavigate={handleSubNavigate} /> : <Navigate to="/login" replace />
-        } />
+      <AuthContext.Provider value={authValue}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage onNavigate={handleLandingNavigate} />} />
+          <Route path="/login" element={<Auth mode="login" onNavigate={handleAuthNavigate} />} />
+          <Route path="/register" element={<Auth mode="register" onNavigate={handleAuthNavigate} />} />
+          <Route path="/subscription" element={
+            authStatus === 'AUTHENTICATED' ? <Subscription onNavigate={handleSubNavigate} /> : <Navigate to="/login" replace />
+          } />
 
-        {/* Private Layout-nested App Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/coa" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-        <Route path="/ledger" element={<ProtectedRoute><GeneralLedger /></ProtectedRoute>} />
-        <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
-        <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
-        <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-        <Route path="/payroll" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
-        <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-        <Route path="/entities" element={<ProtectedRoute><Entities /></ProtectedRoute>} />
-        <Route path="/tax" element={<ProtectedRoute><Tax /></ProtectedRoute>} />
-        <Route path="/cash-bank" element={<ProtectedRoute><CashBank /></ProtectedRoute>} />
-        <Route path="/budgeting" element={<ProtectedRoute><Budgeting /></ProtectedRoute>} />
-        <Route path="/assets" element={<ProtectedRoute><Assets /></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          {/* Private Layout-nested App Routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/coa" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+          <Route path="/ledger" element={<ProtectedRoute><GeneralLedger /></ProtectedRoute>} />
+          <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
+          <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
+          <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+          <Route path="/payroll" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
+          <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+          <Route path="/entities" element={<ProtectedRoute><Entities /></ProtectedRoute>} />
+          <Route path="/tax" element={<ProtectedRoute><Tax /></ProtectedRoute>} />
+          <Route path="/cash-bank" element={<ProtectedRoute><CashBank /></ProtectedRoute>} />
+          <Route path="/budgeting" element={<ProtectedRoute><Budgeting /></ProtectedRoute>} />
+          <Route path="/assets" element={<ProtectedRoute><Assets /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-        {/* Fallback Catch-all routing rules */}
-        <Route path="*" element={state.currentUserEmail ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback Catch-all routing rules */}
+          <Route path="*" element={authStatus === 'AUTHENTICATED' ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
+        </Routes>
+      </AuthContext.Provider>
     </ThemeContext.Provider>
   );
 };

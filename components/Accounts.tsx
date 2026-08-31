@@ -61,7 +61,7 @@ const ChartOfAccounts: React.FC = () => {
     try {
       const activeEntityId = localStorage.getItem('fms_active_entity_id') || state.activeEntityId;
       const data = await accountingApi.getAccounts(activeEntityId);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setApiAccounts(data);
         // Sync with global FMS context
         dispatch({
@@ -81,8 +81,8 @@ const ChartOfAccounts: React.FC = () => {
         setApiAccounts([]);
       }
     } catch (err: any) {
-      console.warn('Accounting API unavailable or unauthenticated, falling back to local COA state:', err.message);
-      setApiError(null);
+      console.error('Accounting API error:', err.message);
+      setApiError(err.message || 'Gagal memuat Chart of Accounts.');
     } finally {
       setIsLoading(false);
     }
@@ -92,73 +92,21 @@ const ChartOfAccounts: React.FC = () => {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
-  // Merge data source: prefer backend API accounts if fetched, otherwise fallback to FMSContext state
+  // Data source from PostgreSQL backend records
   const displayedAccounts = useMemo(() => {
-    if (apiAccounts.length > 0) {
-      return apiAccounts
-        .filter((a) => a.isActive !== false)
-        .map((a) => {
-          let opening = (a as any).openingBalance || 0;
-          if (!opening && isDemo) {
-            if (a.code === '1001' || a.code === '1110') opening = 15000000;
-            else if (a.code === '1002') opening = 1250000000;
-            else if (a.code === '1003') opening = 680000000;
-            else if (a.code === '1100' || a.code === '1120') opening = 450000000;
-            else if (a.code === '1200' || a.code === '1130') opening = 1200000000;
-            else if (a.code === '1500' || a.code === '1510') opening = 5500000000;
-            else if (a.code === '2000' || a.code === '2110') opening = 240000000;
-            else if (a.code === '2100' || a.code === '2130') opening = 75000000;
-            else if (a.code === '3000' || a.code === '3110') opening = 8000000000;
-          }
-
-          return {
-            id: a.id,
-            code: a.code,
-            name: a.name,
-            type: (a.type.charAt(0) + a.type.slice(1).toLowerCase()) as COAAccount['type'],
-            description: a.description,
-            parentAccountId: a.parentId,
-            openingBalance: opening,
-            isSystem: a.isSystem,
-          };
-        });
-    }
-
-    if (isDemo) {
-      if (state.coa && state.coa.length > 0) {
-        return state.coa;
-      }
-      return [
-        { id: 'coa-1', code: '1001', name: 'Kas Kecil Cabang Jakarta', type: 'Asset', description: 'Kas kecil operasional HO', openingBalance: 15000000 },
-        { id: 'coa-2', code: '1002', name: 'Bank BCA Priority', type: 'Asset', description: 'Rekening bank utama perusahaan', openingBalance: 1250000000 },
-        { id: 'coa-3', code: '1003', name: 'Bank Mandiri Corporate', type: 'Asset', description: 'Rekening bank giro', openingBalance: 680000000 },
-        { id: 'coa-4', code: '1100', name: 'Piutang Usaha Korporat', type: 'Asset', description: 'Piutang institusi klien', openingBalance: 450000000 },
-        { id: 'coa-5', code: '1200', name: 'Persediaan Finished Goods', type: 'Asset', description: 'Persediaan barang utama', openingBalance: 1200000000 },
-        { id: 'coa-6', code: '1500', name: 'Aset Tetap Gedung Merdeka', type: 'Asset', description: 'Gedung pencakar langit', openingBalance: 5500000000 },
-        { id: 'coa-8', code: '2000', name: 'Utang Dagang Supplier', type: 'Liability', description: 'Utang bahan baku', openingBalance: 240000000 },
-        { id: 'coa-9', code: '2100', name: 'Utang PPN Masukan', type: 'Liability', description: 'PPN 11%', openingBalance: 75000000 },
-        { id: 'coa-10', code: '3000', name: 'Modal Ventura Seri-A', type: 'Equity', description: 'Modal disetor Investor', openingBalance: 8000000000 },
-        { id: 'coa-11', code: '4000', name: 'Pendapatan Kontrak Software', type: 'Revenue', description: 'Pendapatan subscription enterprise', openingBalance: 0 },
-        { id: 'coa-12', code: '4100', name: 'Pendapatan Lisensi API', type: 'Revenue', description: 'Pendapatan Integrasi API', openingBalance: 0 },
-        { id: 'coa-13', code: '5000', name: 'HPP Layanan Cloud', type: 'Expense', description: 'Biaya server AWS/Google Cloud', openingBalance: 0 },
-        { id: 'coa-14', code: '5100', name: 'Beban Gaji Direksi & Staf', type: 'Expense', description: 'Beban kompensasi tim', openingBalance: 0 },
-        { id: 'coa-15', code: '5200', name: 'Beban Sewa Data Center', type: 'Expense', description: 'Sewa fasilitas rack', openingBalance: 0 },
-        { id: 'coa-16', code: '5300', name: 'Beban Marketing & Promo', type: 'Expense', description: 'Iklan digital & PR', openingBalance: 0 },
-      ];
-    }
-
-    return state.coa || [];
-  }, [apiAccounts, state.coa, isDemo]);
+    return apiAccounts
+      .filter((a) => a.isActive !== false)
+      .map((a) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        type: (a.type.charAt(0) + a.type.slice(1).toLowerCase()) as COAAccount['type'],
+        description: a.description,
+        parentAccountId: a.parentId,
+        openingBalance: (a as any).openingBalance || 0,
+        isSystem: a.isSystem,
+      }));
+  }, [apiAccounts]);
 
   // Filtered accounts list
   const filteredAccounts = useMemo(() => {
@@ -225,54 +173,46 @@ const ChartOfAccounts: React.FC = () => {
     setActionLoading(true);
     setApiError(null);
 
-    const uid = 'COA-' + Date.now();
-    const localAcc: COAAccount = {
-      id: uid,
-      code: formData.code.trim(),
-      name: formData.name.trim(),
-      type: (formData.type.charAt(0) + formData.type.slice(1).toLowerCase()) as COAAccount['type'],
-      description: formData.description?.trim(),
-      parentAccountId: formData.parentId || undefined,
-      openingBalance: Number(formData.openingBalance) || 0,
-    };
-    const apiAcc: any = {
-      id: uid,
-      code: localAcc.code,
-      name: localAcc.name,
-      type: formData.type,
-      description: localAcc.description,
-      parentId: localAcc.parentAccountId,
-      openingBalance: localAcc.openingBalance,
-      isActive: true,
-    };
-
     try {
       const activeEntityId = await ensureActiveEntityId();
-      if (activeEntityId) {
-        const newAcc = await accountingApi.createAccount({
-          entityId: activeEntityId,
-          code: formData.code.trim(),
-          name: formData.name.trim(),
-          type: formData.type,
-          description: formData.description?.trim() || undefined,
-          parentId: formData.parentId || undefined,
-        });
-        localAcc.id = newAcc.id;
-        apiAcc.id = newAcc.id;
+      if (!activeEntityId) {
+        throw new Error('No active entity available.');
       }
-    } catch (err: any) {
-      console.warn('API account creation fallback to local state:', err.message);
-    }
+      const newAcc = await accountingApi.createAccount({
+        entityId: activeEntityId,
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        type: formData.type,
+        description: formData.description?.trim() || undefined,
+        parentId: formData.parentId || undefined,
+      });
 
-    setApiAccounts(prev => [apiAcc, ...prev.filter(a => a.code !== apiAcc.code)]);
-    dispatch({ type: 'ADD_COA_ACCOUNT', payload: localAcc });
-    setSuccessMessage(
-      language === 'id'
-        ? `Akun ${localAcc.code} - ${localAcc.name} berhasil disimpan!`
-        : `Account ${localAcc.code} - ${localAcc.name} saved successfully!`
-    );
-    setIsAddModalOpen(false);
-    setActionLoading(false);
+      setApiAccounts(prev => [newAcc, ...prev.filter(a => a.code !== newAcc.code)]);
+      dispatch({
+        type: 'ADD_COA_ACCOUNT',
+        payload: {
+          id: newAcc.id,
+          code: newAcc.code,
+          name: newAcc.name,
+          type: (newAcc.type.charAt(0) + newAcc.type.slice(1).toLowerCase()) as COAAccount['type'],
+          description: newAcc.description,
+          parentAccountId: newAcc.parentId,
+          openingBalance: 0,
+          isSystem: newAcc.isSystem,
+        },
+      });
+      setSuccessMessage(
+        language === 'id'
+          ? `Akun ${newAcc.code} - ${newAcc.name} berhasil disimpan!`
+          : `Account ${newAcc.code} - ${newAcc.name} saved successfully!`
+      );
+      setIsAddModalOpen(false);
+    } catch (err: any) {
+      console.error('API account creation error:', err.message);
+      setApiError(err.message || 'Gagal menyimpan akun.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -286,16 +226,6 @@ const ChartOfAccounts: React.FC = () => {
     setActionLoading(true);
     setApiError(null);
 
-    const updatedCoa: COAAccount = {
-      ...editingAccount,
-      code: formData.code.trim(),
-      name: formData.name.trim(),
-      type: (formData.type.charAt(0) + formData.type.slice(1).toLowerCase()) as COAAccount['type'],
-      description: formData.description?.trim(),
-      parentAccountId: formData.parentId || undefined,
-      openingBalance: Number(formData.openingBalance) || 0,
-    };
-
     try {
       await accountingApi.updateAccount(editingAccount.id, {
         name: formData.name.trim(),
@@ -303,46 +233,61 @@ const ChartOfAccounts: React.FC = () => {
         description: formData.description?.trim() || undefined,
         parentId: formData.parentId || undefined,
       });
-    } catch (err: any) {
-      console.warn('API account update fallback to local state:', err.message);
-    }
 
-    setApiAccounts(prev => prev.map(a => a.id === editingAccount.id ? {
-      ...a,
-      code: formData.code.trim(),
-      name: formData.name.trim(),
-      type: formData.type,
-      description: formData.description?.trim(),
-      parentId: formData.parentId || undefined,
-      openingBalance: Number(formData.openingBalance) || 0,
-    } : a));
-    dispatch({ type: 'EDIT_COA_ACCOUNT', payload: updatedCoa });
-    setSuccessMessage(
-      language === 'id'
-        ? `Akun ${formData.code} berhasil diperbarui!`
-        : `Account ${formData.code} updated successfully!`
-    );
-    setIsEditModalOpen(false);
-    setEditingAccount(null);
-    setActionLoading(false);
+      setApiAccounts(prev => prev.map(a => a.id === editingAccount.id ? {
+        ...a,
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        type: formData.type,
+        description: formData.description?.trim(),
+        parentId: formData.parentId || undefined,
+        openingBalance: Number(formData.openingBalance) || 0,
+      } : a));
+      dispatch({
+        type: 'EDIT_COA_ACCOUNT',
+        payload: {
+          ...editingAccount,
+          code: formData.code.trim(),
+          name: formData.name.trim(),
+          type: (formData.type.charAt(0) + formData.type.slice(1).toLowerCase()) as COAAccount['type'],
+          description: formData.description?.trim(),
+          parentAccountId: formData.parentId || undefined,
+          openingBalance: Number(formData.openingBalance) || 0,
+        },
+      });
+      setSuccessMessage(
+        language === 'id'
+          ? `Akun ${formData.code} berhasil diperbarui!`
+          : `Account ${formData.code} updated successfully!`
+      );
+      setIsEditModalOpen(false);
+      setEditingAccount(null);
+    } catch (err: any) {
+      console.error('API account update error:', err.message);
+      setApiError(err.message || 'Gagal memperbarui akun.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const confirmDelete = async () => {
-    if (deleteAccountId) {
-      setActionLoading(true);
-      try {
-        await accountingApi.deactivateAccount(deleteAccountId);
-      } catch (err: any) {
-        console.warn('API account deactivation fallback to local state:', err.message);
-      }
+    if (!deleteAccountId) return;
+    setActionLoading(true);
+    setApiError(null);
+    try {
+      await accountingApi.deactivateAccount(deleteAccountId);
       setApiAccounts(prev => prev.filter(a => a.id !== deleteAccountId));
       dispatch({ type: 'DELETE_COA_ACCOUNT', payload: deleteAccountId });
       setSuccessMessage(
         language === 'id' ? 'Akun berhasil dihapus dari sistem.' : 'Account deleted successfully.'
       );
-      setActionLoading(false);
       setIsDeleteConfirmOpen(false);
       setDeleteAccountId(null);
+    } catch (err: any) {
+      console.error('API account delete error:', err.message);
+      setApiError(err.message || 'Gagal menghapus akun.');
+    } finally {
+      setActionLoading(false);
     }
   };
 

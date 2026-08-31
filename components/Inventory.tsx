@@ -415,19 +415,10 @@ export const Inventory: React.FC = () => {
 
   const totalInventoryValuation = items.reduce((sum, i) => sum + (i.inventoryValue || 0), 0);
   const totalStockUnits = items.reduce((sum, i) => sum + (i.quantityOnHand || 0), 0);
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
 
-  const displayValuation = items.length > 0 ? totalInventoryValuation : (isDemo ? 1875000000 : 0);
-  const displayItemsCount = items.length > 0 ? items.length : (isDemo ? 2 : 0);
-  const displayTotalUnits = items.length > 0 ? totalStockUnits : (isDemo ? 24 : 0);
+  const displayValuation = totalInventoryValuation;
+  const displayItemsCount = items.length;
+  const displayTotalUnits = totalStockUnits;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -662,36 +653,7 @@ export const Inventory: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {(() => {
-                  const defaultDemoItems = [
-                    {
-                      id: 'item-dl380',
-                      sku: 'SVR-DL380',
-                      name: 'Central Hardware Server Cluster DL380',
-                      description: 'Enterprise rack server node Gen10',
-                      category: { name: 'HARDWARE' },
-                      valuationMethod: 'FIFO',
-                      quantityOnHand: 9,
-                      unitOfMeasure: { code: 'units' },
-                      averageCost: 150000000,
-                      inventoryValue: 1350000000,
-                      isLowStock: false,
-                    },
-                    {
-                      id: 'item-c9300',
-                      sku: 'RT-CIS-93',
-                      name: 'Cisco Enterprise Layer 3 Router 9300',
-                      description: 'Core backbone switch network router',
-                      category: { name: 'NETWORK' },
-                      valuationMethod: 'AVCO',
-                      quantityOnHand: 15,
-                      unitOfMeasure: { code: 'pcs' },
-                      averageCost: 35000000,
-                      inventoryValue: 525000000,
-                      isLowStock: false,
-                    },
-                  ];
-
-                  const list = items.length > 0 ? items : (isDemo ? defaultDemoItems : []);
+                  const list = items;
                   const filtered = list.filter(
                     (i) =>
                       i.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||

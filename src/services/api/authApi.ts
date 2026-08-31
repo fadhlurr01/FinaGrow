@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, clearApiCache } from './client';
 
 export interface RegisterPayload {
   email: string;
@@ -26,18 +26,21 @@ export interface AuthResponse {
     name: string;
     slug: string;
     baseCurrency: string;
-  };
+  } | null;
   entity?: {
     id: string;
+    organizationId: string;
     name: string;
     code: string;
-  };
-  role: string;
-  sessionToken?: string;
+    baseCurrency?: string;
+  } | null;
+  role: 'OWNER' | 'ADMIN' | 'ACCOUNTANT' | 'AUDITOR' | 'VIEWER' | string;
+  memberships?: any[];
 }
 
 export const authApi = {
   async register(payload: RegisterPayload): Promise<AuthResponse> {
+    clearApiCache();
     return apiClient<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -45,6 +48,7 @@ export const authApi = {
   },
 
   async login(payload: LoginPayload): Promise<AuthResponse> {
+    clearApiCache();
     return apiClient<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -52,13 +56,14 @@ export const authApi = {
   },
 
   async logout(): Promise<{ message: string }> {
+    clearApiCache();
     return apiClient<{ message: string }>('/auth/logout', {
       method: 'POST',
     });
   },
 
-  async getMe(): Promise<any> {
-    return apiClient<any>('/auth/me', {
+  async getMe(): Promise<AuthResponse> {
+    return apiClient<AuthResponse>('/auth/me', {
       method: 'GET',
     });
   },

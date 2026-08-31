@@ -203,20 +203,10 @@ const Users: React.FC = () => {
         </div>
       )}
 
-      {/* 2. TOP 4 KPI CARDS (Matching Screenshot 2) */}
+      {/* 2. TOP 4 KPI CARDS */}
       {(() => {
-        const isDemo = Boolean(
-          state.currentUserEmail && 
-          (
-            state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-            state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-            state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-            state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-          )
-        );
-
-        const totalMembers = users.length > 0 ? users.length : (isDemo ? 5 : 1);
-        const activeMembers = users.length > 0 ? users.filter(u => u.status === 'Active' || (u as any).isActive !== false).length : (isDemo ? 5 : 1);
+        const totalMembers = users.length > 0 ? users.length : 1;
+        const activeMembers = users.length > 0 ? users.filter(u => u.status === 'Active' || (u as any).isActive !== false).length : 1;
         const primaryAccountants = users.length > 0 ? users.filter(u => u.role === 'ACCOUNTANT').length : 0;
 
         return (
@@ -226,10 +216,10 @@ const Users: React.FC = () => {
                 PROVISIONED SEATS
               </span>
               <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                {totalMembers} / 5
+                {totalMembers} / {state.subscription === 'Pro' ? '5' : '1'}
               </div>
               <p className="text-[10px] text-slate-400 mt-2 font-medium">
-                Active users quota of Pro Plan
+                Active users quota of {state.subscription} Plan
               </p>
             </div>
 
@@ -320,69 +310,6 @@ const Users: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const isDemo = Boolean(
-                  state.currentUserEmail && 
-                  (
-                    state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-                    state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-                  )
-                );
-
-                const defaultDemoUsers = [
-                  {
-                    id: 'u-1',
-                    name: 'Demo Admin',
-                    seatId: 'SEAT ID: REG_2',
-                    email: 'demo_admin@fms.com',
-                    role: 'Admin',
-                    capacity: 'Pro Plan',
-                    status: 'ACTIVE',
-                    isLocked: true,
-                  },
-                  {
-                    id: 'u-2',
-                    name: 'Demo Account',
-                    seatId: 'SEAT ID: REG_4',
-                    email: 'demo@fms.com',
-                    role: 'Admin',
-                    capacity: 'Pro Plan',
-                    status: 'ACTIVE',
-                    isLocked: true,
-                  },
-                  {
-                    id: 'u-3',
-                    name: 'Andi Wijaya',
-                    seatId: 'SEAT ID: REG_0',
-                    email: 'andi@bellcorp.com',
-                    role: 'User',
-                    capacity: 'Free Plan',
-                    status: 'ACTIVE',
-                    isLocked: false,
-                  },
-                  {
-                    id: 'u-4',
-                    name: 'Sari Indah',
-                    seatId: 'SEAT ID: REG_1',
-                    email: 'sari@bellcorp.com',
-                    role: 'User',
-                    capacity: 'Free Plan',
-                    status: 'ACTIVE',
-                    isLocked: false,
-                  },
-                  {
-                    id: 'u-5',
-                    name: 'Demo User',
-                    seatId: 'SEAT ID: REG_3',
-                    email: 'demo_user@fms.com',
-                    role: 'User',
-                    capacity: 'Free Plan',
-                    status: 'ACTIVE',
-                    isLocked: false,
-                  },
-                ];
-
                 const newlyRegisteredFallback = state.currentUserEmail ? [
                   {
                     id: 'u-self',
@@ -409,7 +336,7 @@ const Users: React.FC = () => {
                       isLocked: u.role === 'OWNER' || u.email === 'demo_admin@fms.com' || u.email === 'demo@fms.com',
                       raw: u,
                     }))
-                  : (isDemo ? defaultDemoUsers : newlyRegisteredFallback);
+                  : newlyRegisteredFallback;
 
                 const filtered = listToRender.filter(u => {
                   const matchSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());

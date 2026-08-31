@@ -4,36 +4,18 @@ import { FMSState, COAAccount } from '../types';
 const today = () => new Date().toISOString().slice(0, 10);
 const monthKey = (d: string) => d.slice(0, 7);
 
-export const DEFAULT_COA: COAAccount[] = [
-  { id: 'coa-1', code: '1001', name: 'Kas Kecil Cabang Jakarta', type: 'Asset', description: 'Kas kecil operasional HO', openingBalance: 15000000 },
-  { id: 'coa-2', code: '1002', name: 'Bank BCA Priority', type: 'Asset', description: 'Rekening bank utama perusahaan', openingBalance: 1250000000 },
-  { id: 'coa-3', code: '1003', name: 'Bank Mandiri Corporate', type: 'Asset', description: 'Rekening bank giro', openingBalance: 680000000 },
-  { id: 'coa-4', code: '1100', name: 'Piutang Usaha Korporat', type: 'Asset', description: 'Piutang institusi klien', openingBalance: 450000000 },
-  { id: 'coa-5', code: '1200', name: 'Persediaan Finished Goods', type: 'Asset', description: 'Persediaan barang utama', openingBalance: 1200000000 },
-  { id: 'coa-6', code: '1500', name: 'Aset Tetap Gedung Merdeka', type: 'Asset', description: 'Gedung pencakar langit', openingBalance: 5500000000 },
-  { id: 'coa-8', code: '2000', name: 'Utang Dagang Supplier', type: 'Liability', description: 'Utang bahan baku', openingBalance: 240000000 },
-  { id: 'coa-9', code: '2100', name: 'Utang PPN Masukan', type: 'Liability', description: 'PPN 11%', openingBalance: 75000000 },
-  { id: 'coa-10', code: '3000', name: 'Modal Ventura Seri-A', type: 'Equity', description: 'Modal disetor Investor', openingBalance: 8000000000 },
-  { id: 'coa-11', code: '4000', name: 'Pendapatan Kontrak Software', type: 'Revenue', description: 'Pendapatan subscription enterprise', openingBalance: 0 },
-  { id: 'coa-12', code: '4100', name: 'Pendapatan Lisensi API', type: 'Revenue', description: 'Pendapatan Integrasi API', openingBalance: 0 },
-  { id: 'coa-13', code: '5000', name: 'HPP Layanan Cloud', type: 'Expense', description: 'Biaya server AWS/Google Cloud', openingBalance: 0 },
-  { id: 'coa-14', code: '5100', name: 'Beban Gaji Direksi & Staf', type: 'Expense', description: 'Beban kompensasi tim', openingBalance: 0 },
-  { id: 'coa-15', code: '5200', name: 'Beban Sewa Data Center', type: 'Expense', description: 'Sewa fasilitas rack', openingBalance: 0 },
-  { id: 'coa-16', code: '5300', name: 'Beban Marketing & Promo', type: 'Expense', description: 'Iklan digital & PR', openingBalance: 0 },
-];
-
-export const DEFAULT_STATE: FMSState = {
+export const EMPTY_STATE: FMSState = {
   version: '2.0-cloud',
   currency: 'IDR',
   lang: 'id',
   theme: 'light',
-  role: 'Admin',
-  subscription: 'Pro',
-  activeEntity: 'BC',
+  role: 'User',
+  subscription: 'Free',
+  activeEntity: '',
   activeEntityId: '',
   activePeriod: monthKey(today()),
   currentView: 'Dashboard',
-  currentUserEmail: 'demo_admin@fms.com',
+  currentUserEmail: undefined,
   modules: {
     dashboard: true,
     transactions: true,
@@ -48,69 +30,10 @@ export const DEFAULT_STATE: FMSState = {
     users: true,
     settings: true,
   },
-  entities: [
-    { id: 'e-bc', code: 'BC', name: 'BellCorp Indonesia', currency: 'IDR' },
-    { id: 'e-ob', code: 'OB', name: 'OptiBiz Global', currency: 'USD' },
-  ],
+  entities: [],
   users: [],
-  coa: DEFAULT_COA,
-  transactions: [
-    {
-      id: 'tx-1',
-      date: '2026-08-31',
-      description: 'Terima Termin 1 PT. Astra International',
-      type: 'income',
-      category: 'Sales',
-      amount: 350000000,
-      status: 'Completed',
-      dr: '1002',
-      cr: '1100',
-    },
-    {
-      id: 'tx-2',
-      date: '2026-08-30',
-      description: 'Bayar Cloud Server AWS',
-      type: 'expense',
-      category: 'Operational',
-      amount: 55000000,
-      status: 'Completed',
-      dr: '5000',
-      cr: '1002',
-    },
-    {
-      id: 'tx-3',
-      date: '2026-08-29',
-      description: 'Distribusi Payroll Bulanan Direksi',
-      type: 'expense',
-      category: 'Payroll',
-      amount: 185000000,
-      status: 'Completed',
-      dr: '5100',
-      cr: '1003',
-    },
-    {
-      id: 'tx-4',
-      date: '2026-08-27',
-      description: 'SaaS Agreement - Singapore Corp',
-      type: 'income',
-      category: 'Sales',
-      amount: 48000,
-      status: 'Completed',
-      dr: '1002',
-      cr: '4000',
-    },
-    {
-      id: 'tx-5',
-      date: '2026-08-25',
-      description: 'Bayar Kampanye Digital agency',
-      type: 'expense',
-      category: 'Marketing',
-      amount: 50000000,
-      status: 'Completed',
-      dr: '5300',
-      cr: '1002',
-    },
-  ],
+  coa: [],
+  transactions: [],
   invoices: [],
   budgets: [],
   assets: [],
@@ -118,31 +41,24 @@ export const DEFAULT_STATE: FMSState = {
   projects: [],
   vendors: [],
   payrollRuns: [],
-  notifications: [
-    {
-      id: 'N1',
-      title: 'FINAGROW Cloud Connected',
-      message: 'Sistem pembukuan multi-entitas FINAGROW aktif dan tersambung ke PostgreSQL.',
-      date: today(),
-      isRead: false,
-      type: 'info',
-    },
-  ],
+  notifications: [],
 };
+
+export const DEFAULT_STATE: FMSState = EMPTY_STATE;
 
 /**
  * Harmless initial state generator for compatibility
  */
 export function getSeededStateForUser(email: string, role: string): FMSState {
   return {
-    ...DEFAULT_STATE,
+    ...EMPTY_STATE,
     currentUserEmail: email,
-    role: (role === 'Admin' || role === 'admin') ? 'Admin' : 'User',
+    role: (role === 'Admin' || role === 'admin' || role === 'OWNER') ? 'Admin' : 'User',
   };
 }
 
 const FMSContext = createContext<{ state: FMSState; dispatch: React.Dispatch<any> }>({
-  state: DEFAULT_STATE,
+  state: EMPTY_STATE,
   dispatch: () => null,
 });
 
@@ -251,43 +167,10 @@ const fmsReducer = (state: FMSState, action: Action): FMSState => {
         notifications: [action.payload, ...(state.notifications || [])],
       };
     case 'LOGIN_USER': {
-      const isDemo = Boolean(
-        action.payload.email && 
-        (
-          action.payload.email.toLowerCase().includes('demo') ||
-          action.payload.email.toLowerCase() === 'admin@finagrow.com'
-        )
-      );
-
-      if (!isDemo) {
-        // Newly registered account: complete clean slate without demo leftovers
-        return {
-          ...DEFAULT_STATE,
-          currentUserEmail: action.payload.email,
-          coa: [],
-          transactions: [],
-          invoices: [],
-          budgets: [],
-          assets: [],
-          inventory: [],
-          vendors: [],
-          projects: [],
-          payrollRuns: [],
-          entities: action.payload.stateData?.activeEntityId ? [
-            {
-              id: action.payload.stateData.activeEntityId,
-              code: action.payload.stateData.activeEntity || 'HQ',
-              name: action.payload.stateData.activeEntity || 'Perusahaan Utama',
-              currency: 'IDR'
-            }
-          ] : [],
-          ...(action.payload.stateData || {}),
-        };
-      }
-
-      // Demo user: load authoritative reference dataset
       return {
-        ...DEFAULT_STATE,
+        ...EMPTY_STATE,
+        theme: state.theme,
+        lang: state.lang,
         currentUserEmail: action.payload.email,
         ...(action.payload.stateData || {}),
       };
@@ -297,19 +180,12 @@ const fmsReducer = (state: FMSState, action: Action): FMSState => {
         localStorage.removeItem('fms_active_user_email');
         localStorage.removeItem('fms_active_organization_id');
         localStorage.removeItem('fms_active_entity_id');
-        localStorage.removeItem('fms_session_token');
       } catch (_) {}
       return {
-        ...DEFAULT_STATE,
+        ...EMPTY_STATE,
+        theme: state.theme,
+        lang: state.lang,
         currentUserEmail: undefined,
-        activeEntityId: '',
-        coa: [],
-        transactions: [],
-        invoices: [],
-        budgets: [],
-        assets: [],
-        inventory: [],
-        vendors: [],
       };
     default:
       return state;
@@ -317,46 +193,17 @@ const fmsReducer = (state: FMSState, action: Action): FMSState => {
 };
 
 export const FMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(fmsReducer, DEFAULT_STATE, (initial) => {
+  const [state, dispatch] = useReducer(fmsReducer, EMPTY_STATE, (initial) => {
     try {
       const activeEmail = localStorage.getItem('fms_active_user_email');
       const savedTheme = localStorage.getItem('theme') || 'light';
       const savedLang = (localStorage.getItem('fms_language') as 'id' | 'en') || 'id';
 
-      const isDemo = Boolean(
-        activeEmail && 
-        (
-          activeEmail.toLowerCase() === 'demo_admin@fms.com' ||
-          activeEmail.toLowerCase() === 'demo@fms.com' ||
-          activeEmail.toLowerCase() === 'demo_user@fms.com' ||
-          activeEmail.toLowerCase() === 'admin@finagrow.com'
-        )
-      );
-
-      if (activeEmail && !isDemo) {
-        return {
-          ...initial,
-          theme: savedTheme,
-          lang: savedLang,
-          currentUserEmail: activeEmail,
-          coa: [],
-          transactions: [],
-          invoices: [],
-          budgets: [],
-          assets: [],
-          inventory: [],
-          vendors: [],
-          projects: [],
-          payrollRuns: [],
-          entities: [],
-        };
-      }
-
       return {
         ...initial,
         theme: savedTheme,
         lang: savedLang,
-        currentUserEmail: activeEmail || 'demo_admin@fms.com',
+        currentUserEmail: activeEmail || undefined,
       };
     } catch {
       return initial;

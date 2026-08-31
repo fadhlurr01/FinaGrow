@@ -4,6 +4,7 @@ import { useFMS } from '../context/FMSContext';
 import { useLocalization } from '../hooks/useLocalization';
 import { useTheme } from '../hooks/useTheme';
 import { LogOut, Check, Lock, Zap, Sparkles, X, Star } from 'lucide-react';
+import { subscriptionApi } from '../src/services/api/subscriptionApi';
 
 interface SidebarProps {
   currentView: string;
@@ -26,6 +27,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isPro = state.subscription === 'Pro';
   const isDark = theme === 'dark';
+
+  // Sync subscription state on mount
+  React.useEffect(() => {
+    subscriptionApi.getCurrentSubscription()
+      .then((sub) => {
+        const isPlanPro = sub.planCode === 'PRO' || sub.planCode === 'ENTERPRISE';
+        dispatch({ type: 'SET_SUBSCRIPTION', payload: isPlanPro ? 'Pro' : 'Free' });
+      })
+      .catch(() => {});
+  }, [dispatch]);
 
   const allNavItems = [
     { name: 'Dashboard', icon: HomeIcon, module: 'dashboard' },
@@ -53,9 +64,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     return state.modules[item.module] || !item.module;
   });
 
-  const handleTogglePlan = () => {
+  const handleTogglePlan = async () => {
     const nextPlan = isPro ? 'Free' : 'Pro';
-    dispatch({ type: 'SET_SUBSCRIPTION', payload: nextPlan });
+    const nextPlanCode = isPro ? 'FREE' : 'PRO';
+    try {
+      await subscriptionApi.changePlan(nextPlanCode);
+      dispatch({ type: 'SET_SUBSCRIPTION', payload: nextPlan });
+    } catch (e) {
+      console.error('Failed to change subscription plan:', e);
+    }
   };
 
   return (

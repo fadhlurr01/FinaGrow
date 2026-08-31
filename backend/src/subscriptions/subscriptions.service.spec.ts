@@ -38,13 +38,13 @@ describe('SubscriptionsService (Phase 9)', () => {
     prisma.subscription.create.mockResolvedValue({
       id: 'sub-1',
       organizationId: orgId,
-      planCode: 'PRO',
+      planCode: 'FREE',
       status: 'ACTIVE',
     });
 
     const sub = await service.getCurrentSubscription(orgId);
 
-    expect(sub.planCode).toBe('PRO');
+    expect(sub.planCode).toBe('FREE');
     expect(sub.status).toBe('ACTIVE');
   });
 

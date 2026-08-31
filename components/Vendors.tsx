@@ -99,48 +99,9 @@ const Vendors: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveVendors = useMemo(() => {
-    if (vendors.length > 0) return vendors;
-    if (isDemo) {
-      return [
-        {
-          id: 'v-1',
-          name: 'AWS Indonesia',
-          legalName: 'Budi Santoso',
-          vendorCode: 'VND-001',
-          email: 'budi.s@aws.id',
-          phone: '0812-3456-7890',
-          currency: 'IDR',
-          creditLimit: 250000000,
-          paymentTermsDays: 30,
-          isActive: true,
-        },
-        {
-          id: 'v-2',
-          name: 'Digital Marketing Agency',
-          legalName: 'David Lee',
-          vendorCode: 'VND-002',
-          email: 'david@digitalagency.com',
-          phone: '0815-5566-7788',
-          currency: 'IDR',
-          creditLimit: 50000000,
-          paymentTermsDays: 14,
-          isActive: true,
-        },
-      ];
-    }
-    return [];
-  }, [vendors, isDemo]);
+    return vendors;
+  }, [vendors]);
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,62 +112,11 @@ const Vendors: React.FC = () => {
 
     try {
       const activeEntityId = await ensureActiveEntityId();
-      if (activeEntityId) {
-        const created = await purchasesApi.createVendor({
-          entityId: activeEntityId,
-          name: formData.name,
-          legalName: formData.legalName,
-          email: formData.email,
-          phone: formData.phone,
-          taxId: formData.taxId,
-          billingAddress: formData.billingAddress,
-          bankDetails: formData.bankDetails,
-          currency: formData.currency,
-          paymentTermsDays: Number(formData.paymentTermsDays) || 30,
-          creditLimit: Number(formData.creditLimit) || 0,
-        });
-        if (created && created.id) {
-          setVendors(prev => [created, ...prev.filter(v => v.id !== created.id)]);
-          setIsAddModalOpen(false);
-          return;
-        }
+      if (!activeEntityId) {
+        throw new Error('No active entity selected.');
       }
-    } catch (err: any) {
-      console.warn('API create vendor notice:', err.message);
-    }
-
-    const newVendor: ApiVendor = {
-      id: `v-${Date.now()}`,
-      vendorCode: `VND-${String(vendors.length + 1).padStart(3, '0')}`,
-      name: formData.name,
-      legalName: formData.legalName,
-      email: formData.email,
-      phone: formData.phone,
-      taxId: formData.taxId,
-      billingAddress: formData.billingAddress,
-      bankDetails: formData.bankDetails,
-      currency: formData.currency,
-      paymentTermsDays: Number(formData.paymentTermsDays) || 30,
-      creditLimit: Number(formData.creditLimit) || 0,
-      isActive: true,
-      organizationId: localStorage.getItem('fms_active_organization_id') || 'org-user',
-      entityId: localStorage.getItem('fms_active_entity_id') || 'e-user',
-      createdAt: new Date().toISOString(),
-    } as any;
-    setVendors(prev => [newVendor, ...prev]);
-    setIsAddModalOpen(false);
-  };
-
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingVendor) return;
-    if (!formData.name) {
-      alert(language === 'en' ? 'Vendor name is required' : 'Nama Vendor wajib diisi');
-      return;
-    }
-
-    try {
-      await purchasesApi.updateVendor(editingVendor.id, {
+      const created = await purchasesApi.createVendor({
+        entityId: activeEntityId,
         name: formData.name,
         legalName: formData.legalName,
         email: formData.email,
@@ -218,36 +128,56 @@ const Vendors: React.FC = () => {
         paymentTermsDays: Number(formData.paymentTermsDays) || 30,
         creditLimit: Number(formData.creditLimit) || 0,
       });
+      if (created && created.id) {
+        setVendors(prev => [created, ...prev.filter(v => v.id !== created.id)]);
+        setIsAddModalOpen(false);
+      }
     } catch (err: any) {
-      console.warn('API update vendor notice:', err.message);
+      console.error('API create vendor error:', err.message);
+      alert(err.message || 'Gagal menyimpan vendor baru.');
+    }
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVendor) return;
+    if (!formData.name) {
+      alert(language === 'en' ? 'Vendor name is required' : 'Nama Vendor wajib diisi');
+      return;
     }
 
-    setVendors(prev => prev.map(v => v.id === editingVendor.id ? {
-      ...v,
-      name: formData.name,
-      legalName: formData.legalName,
-      email: formData.email,
-      phone: formData.phone,
-      taxId: formData.taxId,
-      billingAddress: formData.billingAddress,
-      bankDetails: formData.bankDetails,
-      currency: formData.currency,
-      paymentTermsDays: Number(formData.paymentTermsDays) || 30,
-      creditLimit: Number(formData.creditLimit) || 0,
-    } : v));
-    setIsEditModalOpen(false);
-    setEditingVendor(null);
+    try {
+      const updated = await purchasesApi.updateVendor(editingVendor.id, {
+        name: formData.name,
+        legalName: formData.legalName,
+        email: formData.email,
+        phone: formData.phone,
+        taxId: formData.taxId,
+        billingAddress: formData.billingAddress,
+        bankDetails: formData.bankDetails,
+        currency: formData.currency,
+        paymentTermsDays: Number(formData.paymentTermsDays) || 30,
+        creditLimit: Number(formData.creditLimit) || 0,
+      });
+      setVendors(prev => prev.map(v => v.id === editingVendor.id ? { ...v, ...updated } : v));
+      setIsEditModalOpen(false);
+      setEditingVendor(null);
+    } catch (err: any) {
+      console.error('API update vendor error:', err.message);
+      alert(err.message || 'Gagal memperbarui vendor.');
+    }
   };
 
   const confirmDeactivate = async () => {
     if (isDeleteConfirmOpen) {
       try {
         await purchasesApi.deactivateVendor(isDeleteConfirmOpen);
+        setVendors(prev => prev.filter(v => v.id !== isDeleteConfirmOpen));
+        setIsDeleteConfirmOpen(null);
       } catch (err: any) {
-        console.warn('API delete vendor notice:', err.message);
+        console.error('API delete vendor error:', err.message);
+        alert(err.message || 'Gagal menghapus vendor.');
       }
-      setVendors(prev => prev.filter(v => v.id !== isDeleteConfirmOpen));
-      setIsDeleteConfirmOpen(null);
     }
   };
 

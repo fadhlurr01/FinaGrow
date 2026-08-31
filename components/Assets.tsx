@@ -181,38 +181,9 @@ export const Assets: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveAssets = useMemo(() => {
-    if (assets.length > 0) return assets;
-    if (isDemo) {
-      return [
-        {
-          id: 'ast-server-1',
-          assetNumber: 'AST-EQ-100',
-          name: 'Server HP ProLiant Gen10',
-          category: { name: 'EQUIPMENT' },
-          acquisitionCost: 180000000,
-          accumulatedDepreciation: 9000000,
-          status: 'ACTIVE',
-          acquisitionDate: '2026-05-03',
-          usefulLifeMonths: 60,
-          depreciationMethod: 'STRAIGHT_LINE',
-          location: 'HQ Data Center Rack A1',
-          custodian: 'Andi Wijaya (IT Lead)',
-        }
-      ];
-    }
-    return [];
-  }, [assets, isDemo]);
+    return assets;
+  }, [assets]);
 
   // Filtered Assets
   const filteredAssets = useMemo(() => {
@@ -472,12 +443,9 @@ export const Assets: React.FC = () => {
 
       {/* KPI METRIC CARDS */}
       {(() => {
-        const isDemo = state.currentUserEmail
-          ? ['demo_admin@fms.com', 'demo@fms.com', 'demo_user@fms.com', 'admin@finagrow.com'].includes(state.currentUserEmail.toLowerCase())
-          : false;
-        const displayTotalCost = assets.length > 0 ? kpis.totalCost : (isDemo ? 180000000 : 0);
-        const displayAccumDeprec = assets.length > 0 ? kpis.totalAccumDeprec : (isDemo ? 9000000 : 0);
-        const displayNBV = assets.length > 0 ? kpis.totalNBV : (isDemo ? 171000000 : 0);
+        const displayTotalCost = kpis.totalCost;
+        const displayAccumDeprec = kpis.totalAccumDeprec;
+        const displayNBV = kpis.totalNBV;
 
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

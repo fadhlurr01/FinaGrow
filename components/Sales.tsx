@@ -148,60 +148,19 @@ const Sales: React.FC = () => {
     }).format(amount);
   };
 
-  const isDemo = Boolean(
-    state.currentUserEmail && 
-    (
-      state.currentUserEmail.toLowerCase() === 'demo_admin@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'demo_user@fms.com' ||
-      state.currentUserEmail.toLowerCase() === 'admin@finagrow.com'
-    )
-  );
-
   const effectiveInvoices = useMemo(() => {
-    if (invoices.length > 0) return invoices;
-    if (isDemo) {
-      return [
-        {
-          id: 'inv-ast-1',
-          invoiceNumber: 'INV-2026-ENT01',
-          customer: { name: 'PT. Astra International', customerCode: 'CUST-001' },
-          invoiceDate: '2026-08-21',
-          dueDate: '2026-09-20',
-          subtotal: 350000000,
-          taxAmount: 38500000,
-          totalAmount: 388500000,
-          amountDue: 0,
-          status: 'PAID',
-          lines: [],
-        },
-        {
-          id: 'inv-kem-2',
-          invoiceNumber: 'INV-2026-ENT02',
-          customer: { name: 'Kementerian Keuangan RI', customerCode: 'CUST-002' },
-          invoiceDate: '2026-08-26',
-          dueDate: '2026-09-25',
-          subtotal: 720000000,
-          taxAmount: 79200000,
-          totalAmount: 799200000,
-          amountDue: 799200000,
-          status: 'SENT',
-          lines: [],
-        },
-      ];
-    }
-    return [];
-  }, [invoices, isDemo]);
+    return invoices;
+  }, [invoices]);
 
   // Metrics overview calculation
   const metrics: Metric[] = useMemo(() => {
     const calcTotalRec = effectiveInvoices.filter((i: any) => i.status !== 'PAID').reduce((sum: number, i: any) => sum + Number(i.amountDue || i.totalAmount), 0);
-    const totalRec = effectiveInvoices.length > 0 ? (arSummary?.totalReceivables ?? calcTotalRec) : (isDemo ? 799200000 : 0);
+    const totalRec = arSummary?.totalReceivables ?? calcTotalRec;
     const overdueRec = arSummary?.totalOverdue ?? 0;
     const calcAvgInvoice = effectiveInvoices.length > 0 ? (effectiveInvoices.reduce((sum: number, i: any) => sum + Number(i.totalAmount), 0) / effectiveInvoices.length) : 0;
-    const avgInvoice = effectiveInvoices.length > 0 ? calcAvgInvoice : (isDemo ? 593850000 : 0);
+    const avgInvoice = arSummary ? (arSummary.totalInvoiced / (effectiveInvoices.length || 1)) : calcAvgInvoice;
     const calcTotalInvoiced = effectiveInvoices.reduce((sum: number, i: any) => sum + Number(i.totalAmount), 0);
-    const totalInvoiced = effectiveInvoices.length > 0 ? (arSummary?.totalInvoiced ?? calcTotalInvoiced) : (isDemo ? 1187700000 : 0);
+    const totalInvoiced = arSummary?.totalInvoiced ?? calcTotalInvoiced;
 
     return [
       {
@@ -209,27 +168,31 @@ const Sales: React.FC = () => {
         value: formatCurrency(totalRec),
         change: totalRec > 0 ? '+5.8%' : '0.0%',
         changeType: 'increase',
+        icon: ScaleIcon,
       },
       {
-        title: language === 'en' ? 'OVERDUE INVOICES' : 'FAKTUR JATUH TEMPO',
+        title: language === 'en' ? 'OVERDUE RECEIVABLES' : 'PIUTANG JATUH TEMPO',
         value: formatCurrency(overdueRec),
-        change: '+0.0%',
-        changeType: 'increase',
+        change: overdueRec > 0 ? '+2.1%' : '0.0%',
+        changeType: overdueRec > 0 ? 'decrease' : 'increase',
+        icon: ArrowTrendingUpIcon,
       },
       {
-        title: language === 'en' ? 'AVG. INVOICE VALUE' : 'RATA-RATA FAKTUR',
+        title: language === 'en' ? 'AVERAGE INVOICE VALUE' : 'RATA-RATA NILAI FAKTUR',
         value: formatCurrency(avgInvoice),
-        change: avgInvoice > 0 ? '-1.1%' : '0.0%',
-        changeType: avgInvoice > 0 ? 'decrease' : 'increase',
+        change: avgInvoice > 0 ? '+12.4%' : '0.0%',
+        changeType: 'increase',
+        icon: BanknotesIcon,
       },
       {
-        title: language === 'en' ? 'REVENUE (YTD)' : 'PENDAPATAN (YTD)',
+        title: language === 'en' ? 'TOTAL INVOICED REVENUE' : 'TOTAL OMZET TERTARIK',
         value: formatCurrency(totalInvoiced),
-        change: totalInvoiced > 0 ? '+22.0%' : '0.0%',
+        change: totalInvoiced > 0 ? '+18.6%' : '0.0%',
         changeType: 'increase',
+        icon: DocumentPlusIcon,
       },
     ];
-  }, [arSummary, effectiveInvoices, language, state.currency, isDemo]);
+  }, [effectiveInvoices, arSummary, language, state.currency]);
 
   // Invoice creation handlers
   const handleOpenAddInvoice = () => {
