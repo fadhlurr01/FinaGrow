@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class HealthController {
   constructor(private prisma: PrismaService) {}
 
-  @Get(['health', 'api/v1/health'])
+  @Get(['', '/', 'health', 'api/v1/health'])
   async checkHealth() {
     let dbStatus = 'connected';
     try {
