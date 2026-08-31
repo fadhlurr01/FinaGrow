@@ -397,8 +397,10 @@ const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { authStatus } = useAuth();
+  const { state } = useFMS();
+  const activeEmail = state.currentUserEmail || localStorage.getItem('fms_active_user_email');
 
-  if (authStatus === 'CHECKING') {
+  if (authStatus === 'CHECKING' && !activeEmail) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 font-sans">
         <div className="flex flex-col items-center gap-4">
@@ -411,7 +413,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
 
-  if (authStatus === 'UNAUTHENTICATED') {
+  if (authStatus === 'UNAUTHENTICATED' && !activeEmail) {
     return <Navigate to="/login" replace />;
   }
 
@@ -422,7 +424,9 @@ const AppContent: React.FC = () => {
   const { state, dispatch } = useFMS();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
-  const [authStatus, setAuthStatus] = useState<AuthStatus>('CHECKING');
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(
+    localStorage.getItem('fms_active_user_email') ? 'AUTHENTICATED' : 'CHECKING'
+  );
 
   const refreshAuth = useCallback(async () => {
     try {
@@ -469,13 +473,14 @@ const AppContent: React.FC = () => {
       } else {
         throw new Error('No user authenticated');
       }
-    } catch (_) {
-      clearApiCache();
-      localStorage.removeItem('fms_active_user_email');
-      localStorage.removeItem('fms_active_organization_id');
-      localStorage.removeItem('fms_active_entity_id');
-      dispatch({ type: 'LOGOUT_USER' });
-      setAuthStatus('UNAUTHENTICATED');
+    } catch (err: any) {
+      console.warn('Silent session check notice:', err.message);
+      const activeEmail = localStorage.getItem('fms_active_user_email');
+      if (activeEmail) {
+        setAuthStatus('AUTHENTICATED');
+      } else {
+        setAuthStatus('UNAUTHENTICATED');
+      }
     }
   }, [dispatch]);
 
@@ -527,6 +532,8 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const hasSession = Boolean(state.currentUserEmail || localStorage.getItem('fms_active_user_email'));
+
   return (
     <ThemeContext.Provider value={themeValue}>
       <AuthContext.Provider value={authValue}>
@@ -536,7 +543,7 @@ const AppContent: React.FC = () => {
           <Route path="/login" element={<Auth mode="login" onNavigate={handleAuthNavigate} />} />
           <Route path="/register" element={<Auth mode="register" onNavigate={handleAuthNavigate} />} />
           <Route path="/subscription" element={
-            authStatus === 'AUTHENTICATED' ? <Subscription onNavigate={handleSubNavigate} /> : <Navigate to="/login" replace />
+            hasSession ? <Subscription onNavigate={handleSubNavigate} /> : <Navigate to="/login" replace />
           } />
 
           {/* Private Layout-nested App Routes */}
@@ -560,7 +567,7 @@ const AppContent: React.FC = () => {
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
           {/* Fallback Catch-all routing rules */}
-          <Route path="*" element={authStatus === 'AUTHENTICATED' ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
+          <Route path="*" element={hasSession ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} />
         </Routes>
       </AuthContext.Provider>
     </ThemeContext.Provider>

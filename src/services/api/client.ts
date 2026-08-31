@@ -3,7 +3,11 @@
  * Standardized HTTP client for backend REST API communication with credentials and error handling.
  */
 
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api/v1';
+export const API_BASE_URL = 
+  (import.meta as any).env?.VITE_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') 
+    ? 'https://fina-grow-backend-pi.vercel.app/api/v1' 
+    : 'http://localhost:4000/api/v1');
 
 export interface ApiEnvelope<T = any> {
   success: boolean;
@@ -117,6 +121,12 @@ export async function apiClient<T = any>(
   const activeOrgId = localStorage.getItem('fms_active_organization_id');
   if (activeOrgId && !headers.has('x-organization-id')) {
     headers.set('x-organization-id', activeOrgId);
+  }
+
+  // Include session token in Authorization header if present
+  const sessionToken = localStorage.getItem('fms_session_token');
+  if (sessionToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${sessionToken}`);
   }
 
   // Set 9-second timeout to prevent UI freezes while allowing adequate serverless response time

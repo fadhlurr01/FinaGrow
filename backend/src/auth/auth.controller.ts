@@ -49,8 +49,7 @@ export class AuthController {
   ) {
     const result = await this.authService.register(dto, ip, userAgent);
     this.setSessionCookie(res, result.sessionToken, result.expiresAt);
-    const { sessionToken, expiresAt, ...publicData } = result;
-    return publicData;
+    return result;
   }
 
   @Post('login')
@@ -63,8 +62,7 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto, ip, userAgent);
     this.setSessionCookie(res, result.sessionToken, result.expiresAt);
-    const { sessionToken, expiresAt, ...publicData } = result;
-    return publicData;
+    return result;
   }
 
   @Post('logout')

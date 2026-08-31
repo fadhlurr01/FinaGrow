@@ -162,6 +162,9 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
     try {
       // Authenticate via backend API (server sets HttpOnly session cookie)
       const authRes = await authApi.login({ email: targetEmail, password: '123456' });
+      if (authRes.sessionToken) {
+        localStorage.setItem('fms_session_token', authRes.sessionToken);
+      }
       if (authRes.organization?.id) {
         localStorage.setItem('fms_active_organization_id', authRes.organization.id);
       }
@@ -231,6 +234,9 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           phoneNumber: phone.trim(),
         });
 
+        if (regRes.sessionToken) {
+          localStorage.setItem('fms_session_token', regRes.sessionToken);
+        }
         localStorage.setItem('fms_active_user_email', normalEmail);
         localStorage.setItem('fms_active_user_name', name.trim() || normalEmail.split('@')[0]);
         if (regRes.organization?.id) {
@@ -271,6 +277,9 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           password,
         });
 
+        if (authRes.sessionToken) {
+          localStorage.setItem('fms_session_token', authRes.sessionToken);
+        }
         localStorage.setItem('fms_active_user_email', normalEmail);
         localStorage.setItem('fms_active_user_name', authRes.user.fullName || normalEmail.split('@')[0]);
         if (authRes.organization?.id) {
