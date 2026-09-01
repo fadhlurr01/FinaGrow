@@ -16,42 +16,6 @@ import { LedgerFilterDto, TrialBalanceFilterDto } from './dto/ledger-filter.dto'
 import { AccountType, AccountSubtype, NormalBalance, JournalEntryStatus, Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
-export const DEFAULT_CHART_OF_ACCOUNTS = [
-  // 1. ASSETS
-  { code: '1110', name: 'Kas & Bank Utama (IDR)', type: AccountType.ASSET, subtype: AccountSubtype.CASH_AND_EQUIVALENT, normalBalance: NormalBalance.DEBIT, description: 'Akun kas dan operasional bank utama' },
-  { code: '1120', name: 'Piutang Usaha (Accounts Receivable)', type: AccountType.ASSET, subtype: AccountSubtype.ACCOUNTS_RECEIVABLE, normalBalance: NormalBalance.DEBIT, description: 'Tagihan penjualan pelanggan belum lunas' },
-  { code: '1130', name: 'Persediaan Barang Dagang (Inventory)', type: AccountType.ASSET, subtype: AccountSubtype.INVENTORY, normalBalance: NormalBalance.DEBIT, description: 'Nilai perolehan stok barang di gudang' },
-  { code: '1140', name: 'Uang Muka Pembelian / Biaya Dibayar Dimuka', type: AccountType.ASSET, subtype: AccountSubtype.PREPAID_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Uang muka operasional dan asuransi dibayar di muka' },
-  { code: '1150', name: 'PPN Masukan (Input Tax Receivable)', type: AccountType.ASSET, subtype: AccountSubtype.OTHER_ASSET, normalBalance: NormalBalance.DEBIT, description: 'Faktur pajak masukan atas pembelian barang/jasa' },
-  { code: '1510', name: 'Aset Tetap - Peralatan & Inventaris Kantor', type: AccountType.ASSET, subtype: AccountSubtype.FIXED_ASSET, normalBalance: NormalBalance.DEBIT, description: 'Komputer, mesin, dan peralatan operasional kantor' },
-  { code: '1520', name: 'Akumulasi Penyusutan Aset Tetap', type: AccountType.ASSET, subtype: AccountSubtype.ACCUMULATED_DEPRECIATION, normalBalance: NormalBalance.CREDIT, description: 'Kontra akun nilai akumulasi depresiasi aset tetap' },
-
-  // 2. LIABILITIES
-  { code: '2110', name: 'Utang Usaha (Accounts Payable)', type: AccountType.LIABILITY, subtype: AccountSubtype.ACCOUNTS_PAYABLE, normalBalance: NormalBalance.CREDIT, description: 'Kewajiban tagihan kepada vendor atau supplier' },
-  { code: '2120', name: 'Beban Akrual / Utang Biaya', type: AccountType.LIABILITY, subtype: AccountSubtype.ACCRUED_EXPENSE, normalBalance: NormalBalance.CREDIT, description: 'Beban operasional yang masih harus dibayar' },
-  { code: '2130', name: 'Utang Pajak - PPN Keluaran (Output Tax)', type: AccountType.LIABILITY, subtype: AccountSubtype.TAX_PAYABLE, normalBalance: NormalBalance.CREDIT, description: 'Kewajiban setoran faktur pajak keluaran PPN 11%' },
-  { code: '2140', name: 'Utang Pajak - PPh 21 / 23 / Final', type: AccountType.LIABILITY, subtype: AccountSubtype.TAX_PAYABLE, normalBalance: NormalBalance.CREDIT, description: 'Kewajiban pemotongan pajak penghasilan karyawan & vendor' },
-  { code: '2150', name: 'Uang Muka Penjualan (Customer Deposits)', type: AccountType.LIABILITY, subtype: AccountSubtype.CURRENT_LIABILITY, normalBalance: NormalBalance.CREDIT, description: 'Deposit atau uang muka diterima dari pelanggan' },
-
-  // 3. EQUITY
-  { code: '3110', name: 'Modal Disetor (Paid-in Capital)', type: AccountType.EQUITY, subtype: AccountSubtype.EQUITY, normalBalance: NormalBalance.CREDIT, description: 'Modal awal pendirian perusahaan dari pemegang saham' },
-  { code: '3210', name: 'Laba Ditahan (Retained Earnings)', type: AccountType.EQUITY, subtype: AccountSubtype.RETAINED_EARNINGS, normalBalance: NormalBalance.CREDIT, description: 'Akumulasi laba bersih periode-periode sebelumnya' },
-
-  // 4. REVENUE
-  { code: '4110', name: 'Pendapatan Penjualan Produk', type: AccountType.REVENUE, subtype: AccountSubtype.OPERATING_REVENUE, normalBalance: NormalBalance.CREDIT, description: 'Pendapatan bruto penjualan barang dagangan' },
-  { code: '4120', name: 'Pendapatan Jasa & Konsultasi', type: AccountType.REVENUE, subtype: AccountSubtype.OPERATING_REVENUE, normalBalance: NormalBalance.CREDIT, description: 'Pendapatan layanan profesional & jasa' },
-
-  // 5. COGS & EXPENSES
-  { code: '5110', name: 'Beban Pokok Penjualan (HPP / COGS)', type: AccountType.EXPENSE, subtype: AccountSubtype.COST_OF_GOODS_SOLD, normalBalance: NormalBalance.DEBIT, description: 'Harga pokok barang yang berhasil terjual' },
-  { code: '6110', name: 'Beban Gaji & Tunjangan Karyawan', type: AccountType.EXPENSE, subtype: AccountSubtype.PAYROLL_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Gaji pokok, BPJS, dan insentif payroll staf' },
-  { code: '6120', name: 'Beban Sewa & Pemeliharaan Gedung', type: AccountType.EXPENSE, subtype: AccountSubtype.OPERATING_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Sewa kantor, gudang, dan pemeliharaan sarana kerja' },
-  { code: '6130', name: 'Beban Listrik, Air, & Telekomunikasi', type: AccountType.EXPENSE, subtype: AccountSubtype.OPERATING_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Tagihan utilitas bulanan dan jaringan internet kantor' },
-  { code: '6140', name: 'Beban Penyusutan Aset Tetap', type: AccountType.EXPENSE, subtype: AccountSubtype.DEPRECIATION_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Alokasi amortisasi & penyusutan berkala aset perusahaan' },
-  { code: '6150', name: 'Beban Pemasaran & Operasional Umum', type: AccountType.EXPENSE, subtype: AccountSubtype.OPERATING_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Iklan digital, transportasi, dan konsumsi operasional' },
-  { code: '8110', name: 'Pendapatan Lain-lain / Bunga Bank', type: AccountType.REVENUE, subtype: AccountSubtype.NON_OPERATING_REVENUE, normalBalance: NormalBalance.CREDIT, description: 'Bunga tabungan giro dan keuntungan selisih kurs' },
-  { code: '9110', name: 'Beban Administrasi Bank & Pajak Bunga', type: AccountType.EXPENSE, subtype: AccountSubtype.NON_OPERATING_EXPENSE, normalBalance: NormalBalance.DEBIT, description: 'Biaya admin transfer bank dan potongan pajak bunga' },
-];
-
 @Injectable()
 export class AccountingService {
   private readonly logger = new Logger(AccountingService.name);
@@ -64,31 +28,6 @@ export class AccountingService {
   // ==========================================
   // 1. CHART OF ACCOUNTS (COA) ENGINE
   // ==========================================
-
-  async seedDefaultAccounts(organizationId: string, entityId: string) {
-    for (const acc of DEFAULT_CHART_OF_ACCOUNTS) {
-      await this.prisma.account.upsert({
-        where: {
-          entityId_code: {
-            entityId,
-            code: acc.code,
-          },
-        },
-        update: {},
-        create: {
-          organizationId,
-          entityId,
-          code: acc.code,
-          name: acc.name,
-          type: acc.type,
-          subtype: acc.subtype,
-          normalBalance: acc.normalBalance,
-          description: acc.description,
-          isSystem: true,
-        },
-      });
-    }
-  }
 
   async getAccounts(organizationId: string, entityId?: string) {
     const where: Prisma.AccountWhereInput = { organizationId };

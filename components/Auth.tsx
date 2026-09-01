@@ -25,6 +25,7 @@ import { useFMS, DEFAULT_STATE, getSeededStateForUser } from '../context/FMSCont
 import { LanguageContext } from '../context/LanguageContext';
 import { ThemeContext } from '../App';
 import { authApi } from '../src/services/api/authApi';
+import { clearApiCache } from '../src/services/api/client';
 
 interface AuthProps {
   mode: 'login' | 'register';
@@ -153,6 +154,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
   };
 
   const handleImmediateDemoLogin = async (roleToUse: 'Admin' | 'User') => {
+    clearApiCache();
     setIsLoading(true);
     setError('');
     setSuccess('');
@@ -200,6 +202,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    clearApiCache();
     setError('');
     setSuccess('');
     setIsLoading(true);
