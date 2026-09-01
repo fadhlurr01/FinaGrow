@@ -172,12 +172,63 @@ const Purchases: React.FC = () => {
     }).format(amount);
   };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveBills = useMemo(() => {
-    return bills;
-  }, [bills]);
+    if (bills.length > 0) return bills;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'bill-d1',
+          billNumber: 'BILL-2026-VND01',
+          vendor: { name: 'AWS Indonesia', code: 'VND-0001' },
+          billDate: '2026-08-30',
+          dueDate: '2026-09-13',
+          subtotal: 95000000,
+          taxAmount: 10450000,
+          totalAmount: 105450000,
+          amountDue: 0,
+          status: 'PAID',
+        },
+      ];
+    }
+    return [];
+  }, [bills, isDemoMode]);
 
   // Metrics summary
   const metrics: Metric[] = useMemo(() => {
+    if (isDemoMode && effectiveBills.length > 0) {
+      return [
+        {
+          title: language === 'en' ? 'TOTAL PAYABLES' : 'TOTAL UTANG USAHA',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+        },
+        {
+          title: language === 'en' ? 'OVERDUE BILLS' : 'UTANG JATUH TEMPO',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+        },
+        {
+          title: language === 'en' ? 'PAID THIS MONTH' : 'DIBAYAR BULAN INI',
+          value: formatCurrency(105450000),
+          change: '-18.5%',
+          changeType: 'decrease',
+        },
+        {
+          title: language === 'en' ? 'AVG. BILL VALUE' : 'RATA-RATA TAGIHAN',
+          value: formatCurrency(105450000),
+          change: '+2.1%',
+          changeType: 'increase',
+        },
+      ];
+    }
+
     const calcTotalPay = effectiveBills.filter((b: any) => b.status !== 'PAID').reduce((sum: number, b: any) => sum + Number(b.amountDue || b.totalAmount), 0);
     const totalPay = apSummary?.totalPayables ?? calcTotalPay;
     const overduePay = apSummary?.totalOverdue ?? 0;
@@ -212,7 +263,7 @@ const Purchases: React.FC = () => {
         changeType: 'increase',
       },
     ];
-  }, [apSummary, effectiveBills, language, state.currency]);
+  }, [apSummary, effectiveBills, isDemoMode, language, state.currency]);
 
   // Bill creation form helpers
   const handleOpenAddBill = () => {

@@ -149,12 +149,79 @@ const Sales: React.FC = () => {
     }).format(amount);
   };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveInvoices = useMemo(() => {
-    return invoices;
-  }, [invoices]);
+    if (invoices.length > 0) return invoices;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'inv-d1',
+          invoiceNumber: 'INV-2026-ENT01',
+          customer: { name: 'PT. Astra International', email: 'billing@astra.co.id' },
+          issueDate: '2026-08-22',
+          dueDate: '2026-09-21',
+          subtotal: 350000000,
+          taxAmount: 38500000,
+          totalAmount: 388500000,
+          amountDue: 0,
+          status: 'PAID',
+        },
+        {
+          id: 'inv-d2',
+          invoiceNumber: 'INV-2026-ENT02',
+          customer: { name: 'Kementerian Keuangan RI', email: 'kemenkeu@kemenkeu.go.id' },
+          issueDate: '2026-08-27',
+          dueDate: '2026-09-16',
+          subtotal: 720000000,
+          taxAmount: 79200000,
+          totalAmount: 799200000,
+          amountDue: 799200000,
+          status: 'PENDING',
+        },
+      ];
+    }
+    return [];
+  }, [invoices, isDemoMode]);
 
   // Metrics overview calculation
   const metrics: Metric[] = useMemo(() => {
+    if (isDemoMode && effectiveInvoices.length > 0) {
+      return [
+        {
+          title: language === 'en' ? 'TOTAL RECEIVABLES' : 'TOTAL PIUTANG USAHA',
+          value: formatCurrency(799200000),
+          change: '+5.8%',
+          changeType: 'increase',
+          icon: ScaleIcon,
+        },
+        {
+          title: language === 'en' ? 'OVERDUE INVOICES' : 'FAKTUR JATUH TEMPO',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+          icon: ArrowTrendingUpIcon,
+        },
+        {
+          title: language === 'en' ? 'AVG. INVOICE VALUE' : 'RATA-RATA NILAI FAKTUR',
+          value: formatCurrency(593850000),
+          change: '-1.1%',
+          changeType: 'decrease',
+          icon: BanknotesIcon,
+        },
+        {
+          title: language === 'en' ? 'REVENUE (YTD)' : 'PENDAPATAN (YTD)',
+          value: formatCurrency(1187700000),
+          change: '+22.0%',
+          changeType: 'increase',
+          icon: DocumentPlusIcon,
+        },
+      ];
+    }
+
     const calcTotalRec = effectiveInvoices.filter((i: any) => i.status !== 'PAID').reduce((sum: number, i: any) => sum + Number(i.amountDue || i.totalAmount), 0);
     const totalRec = arSummary?.totalReceivables ?? calcTotalRec;
     const overdueRec = arSummary?.totalOverdue ?? 0;
@@ -172,28 +239,28 @@ const Sales: React.FC = () => {
         icon: ScaleIcon,
       },
       {
-        title: language === 'en' ? 'OVERDUE RECEIVABLES' : 'PIUTANG JATUH TEMPO',
+        title: language === 'en' ? 'OVERDUE INVOICES' : 'FAKTUR JATUH TEMPO',
         value: formatCurrency(overdueRec),
         change: overdueRec > 0 ? '+2.1%' : '0.0%',
         changeType: overdueRec > 0 ? 'decrease' : 'increase',
         icon: ArrowTrendingUpIcon,
       },
       {
-        title: language === 'en' ? 'AVERAGE INVOICE VALUE' : 'RATA-RATA NILAI FAKTUR',
+        title: language === 'en' ? 'AVG. INVOICE VALUE' : 'RATA-RATA NILAI FAKTUR',
         value: formatCurrency(avgInvoice),
         change: avgInvoice > 0 ? '+12.4%' : '0.0%',
         changeType: 'increase',
         icon: BanknotesIcon,
       },
       {
-        title: language === 'en' ? 'TOTAL INVOICED REVENUE' : 'TOTAL OMZET TERTARIK',
+        title: language === 'en' ? 'REVENUE (YTD)' : 'PENDAPATAN (YTD)',
         value: formatCurrency(totalInvoiced),
         change: totalInvoiced > 0 ? '+18.6%' : '0.0%',
         changeType: 'increase',
         icon: DocumentPlusIcon,
       },
     ];
-  }, [effectiveInvoices, arSummary, language, state.currency]);
+  }, [effectiveInvoices, arSummary, isDemoMode, language, state.currency]);
 
   // Invoice creation handlers
   const handleOpenAddInvoice = () => {

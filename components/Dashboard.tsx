@@ -105,11 +105,11 @@ const Dashboard: React.FC = () => {
     }
     if (isDemoMode) {
       return [
-        { id: 'w1', name: 'Bank BCA Priority', code: '1002', type: 'ASSET', currentBalance: 1455048000 },
-        { id: 'w2', name: 'Bank Mandiri Corporate', code: '1003', type: 'ASSET', currentBalance: 495000000 },
-        { id: 'w3', name: 'Kas Kecil Cabang Jakarta', code: '1001', type: 'ASSET', currentBalance: 15000000 },
-        { id: 'w4', name: 'Piutang Usaha Korporat', code: '1100', type: 'ASSET', currentBalance: 450000000 },
-        { id: 'w5', name: 'Utang Dagang Supplier', code: '2000', type: 'LIABILITY', currentBalance: 240000000 },
+        { id: 'w1', name: 'Petty Cash', code: '1001 - Operational petty cash', type: 'ASSET', currentBalance: 15000000 },
+        { id: 'w2', name: 'Bank BCA Account', code: '1002 - Primary BCA bank account', type: 'ASSET', currentBalance: 1455048000 },
+        { id: 'w3', name: 'Bank Mandiri Account', code: '1003 - Secondary bank account', type: 'ASSET', currentBalance: 495000000 },
+        { id: 'w4', name: 'Accounts Receivable', code: '1100 - Receivable from customers', type: 'ASSET', currentBalance: 799200000 },
+        { id: 'w5', name: 'Accounts Payable', code: '2000 - Payable to raw suppliers', type: 'LIABILITY', currentBalance: 0 },
       ];
     }
     return [];
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
         },
         {
           id: 'tx-d2',
-          date: '2026-08-30',
+          date: '2026-08-31',
           description: 'Bayar Cloud Server AWS',
           category: 'Operational',
           type: 'expense',
@@ -143,7 +143,7 @@ const Dashboard: React.FC = () => {
         },
         {
           id: 'tx-d3',
-          date: '2026-08-29',
+          date: '2026-08-30',
           description: 'Distribusi Payroll Bulanan Direksi',
           category: 'Payroll',
           type: 'expense',
@@ -154,18 +154,18 @@ const Dashboard: React.FC = () => {
         },
         {
           id: 'tx-d4',
-          date: '2026-08-27',
+          date: '2026-08-28',
           description: 'SaaS Agreement - Singapore Corp',
           category: 'Sales',
           type: 'income',
-          amount: 48000000,
+          amount: 48000,
           status: 'Completed',
           dr: '1002 - Bank BCA Priority',
           cr: '4000 - Pendapatan Kontrak Software',
         },
         {
           id: 'tx-d5',
-          date: '2026-08-25',
+          date: '2026-08-26',
           description: 'Bayar Kampanye Digital agency',
           category: 'Marketing',
           type: 'expense',
@@ -212,28 +212,28 @@ const Dashboard: React.FC = () => {
     if (isDemoMode) {
       return [
         {
-          title: t('totalRevenue') || 'Total Revenue',
-          value: formatCurrency(2450000000),
-          change: '+18.4%',
+          title: t('totalRevenue') || 'TOTAL REVENUE',
+          value: formatCurrency(350048000),
+          change: '+11.2%',
           changeType: 'increase',
         },
         {
-          title: t('totalExpenses') || 'Total Expenses',
-          value: formatCurrency(1150000000),
-          change: '+5.2%',
+          title: t('totalExpenses') || 'TOTAL EXPENSES',
+          value: formatCurrency(330000000),
+          change: '+5.7%',
           changeType: 'increase',
         },
         {
-          title: t('netProfit') || 'Net Profit',
-          value: formatCurrency(1300000000),
-          change: '+24.1%',
+          title: t('netProfit') || 'NET PROFIT',
+          value: formatCurrency(20048000),
+          change: '+22.3%',
           changeType: 'increase',
         },
         {
-          title: t('cashBalance') || 'Cash & Bank Balance',
+          title: t('cashBalance') || 'CASH BALANCE',
           value: formatCurrency(1965048000),
-          change: '+12.5%',
-          changeType: 'increase',
+          change: '-1.4%',
+          changeType: 'decrease',
         },
       ];
     }

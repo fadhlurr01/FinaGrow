@@ -200,6 +200,11 @@ const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
   '6800': { code: '6800', name: 'Beban Administrasi Bank' },
 };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   // Convert backend apiEntries or local fallback into unified presentation format
   const displayJournalEntries = useMemo(() => {
     if (apiEntries.length > 0) {
@@ -218,7 +223,7 @@ const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
           const code = acc?.code || known?.code || (cleanId.match(/^\d+$/) ? cleanId : '1001');
           const name = acc?.name || known?.name || 'Akun Buku Besar';
           return {
-            accountName: `${code} - ${name}`,
+            accountName: `AC_${code} - AC_${code}`,
             debit: Number(l.debit) || 0,
             credit: Number(l.credit) || 0,
           };
@@ -226,8 +231,68 @@ const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
       }));
     }
 
+    if (isDemoMode) {
+      return [
+        {
+          id: 'je-1',
+          entryNumber: 'JE-0001',
+          date: '2026-08-31',
+          description: 'Terima Termin 1 PT. Astra International',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_1002 - AC_1002', debit: 350000000, credit: 0 },
+            { accountName: 'AC_1100 - AC_1100', debit: 0, credit: 350000000 },
+          ],
+        },
+        {
+          id: 'je-2',
+          entryNumber: 'JE-0002',
+          date: '2026-08-31',
+          description: 'Bayar Cloud Server AWS',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_5000 - AC_5000', debit: 95000000, credit: 0 },
+            { accountName: 'AC_1002 - AC_1002', debit: 0, credit: 95000000 },
+          ],
+        },
+        {
+          id: 'je-3',
+          entryNumber: 'JE-0003',
+          date: '2026-08-30',
+          description: 'Distribusi Payroll Bulanan Direksi',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_5100 - AC_5100', debit: 185000000, credit: 0 },
+            { accountName: 'AC_1003 - AC_1003', debit: 0, credit: 185000000 },
+          ],
+        },
+        {
+          id: 'je-4',
+          entryNumber: 'JE-0004',
+          date: '2026-08-28',
+          description: 'SaaS Agreement - Singapore Corp',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_1002 - AC_1002', debit: 48000, credit: 0 },
+            { accountName: 'AC_4000 - AC_4000', debit: 0, credit: 48000 },
+          ],
+        },
+        {
+          id: 'je-5',
+          entryNumber: 'JE-0005',
+          date: '2026-08-26',
+          description: 'Bayar Kampanye Digital agency',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_5300 - AC_5300', debit: 50000000, credit: 0 },
+            { accountName: 'AC_1002 - AC_1002', debit: 0, credit: 50000000 },
+          ],
+        },
+      ];
+    }
+
     return [];
-  }, [apiEntries, apiAccounts, state.coa]);
+  }, [apiEntries, apiAccounts, state.coa, isDemoMode]);
 
   const availableAccounts = apiAccounts;
 
