@@ -763,10 +763,10 @@ const Purchases: React.FC = () => {
                           <p className="text-[10px] text-slate-400 font-normal">{bill.vendor?.vendorCode}</p>
                         </td>
                         <td className="px-5 py-4 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          {bill.billDate.slice(0, 10)}
+                          {(bill.billDate || '').slice(0, 10)}
                         </td>
                         <td className="px-5 py-4 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          {bill.dueDate.slice(0, 10)}
+                          {(bill.dueDate || '').slice(0, 10)}
                         </td>
                         <td className="px-5 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-300">
                           {formatCurrency(Number(bill.subtotal))}
@@ -856,11 +856,11 @@ const Purchases: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl text-[11px]">
                       <div>
                         <span className="text-[9px] text-slate-400 uppercase font-bold block">{t('billDate')}</span>
-                        <span className="font-semibold">{bill.billDate.slice(0, 10)}</span>
+                        <span className="font-semibold">{(bill.billDate || '').slice(0, 10)}</span>
                       </div>
                       <div>
                         <span className="text-[9px] text-slate-400 uppercase font-bold block">{t('dueDate')}</span>
-                        <span className="font-semibold">{bill.dueDate.slice(0, 10)}</span>
+                        <span className="font-semibold">{(bill.dueDate || '').slice(0, 10)}</span>
                       </div>
                     </div>
 

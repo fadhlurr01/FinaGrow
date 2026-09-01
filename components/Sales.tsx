@@ -161,7 +161,9 @@ const Sales: React.FC = () => {
         {
           id: 'inv-d1',
           invoiceNumber: 'INV-2026-ENT01',
-          customer: { name: 'PT. Astra International', email: 'billing@astra.co.id' },
+          customerId: 'cust-1',
+          customer: { name: 'PT. Astra International', email: 'billing@astra.co.id', customerCode: 'billing@astra.co.id' },
+          invoiceDate: '2026-08-22',
           issueDate: '2026-08-22',
           dueDate: '2026-09-21',
           subtotal: 350000000,
@@ -169,11 +171,14 @@ const Sales: React.FC = () => {
           totalAmount: 388500000,
           amountDue: 0,
           status: 'PAID',
+          postingStatus: 'POSTED',
         },
         {
           id: 'inv-d2',
           invoiceNumber: 'INV-2026-ENT02',
-          customer: { name: 'Kementerian Keuangan RI', email: 'kemenkeu@kemenkeu.go.id' },
+          customerId: 'cust-2',
+          customer: { name: 'Kementerian Keuangan RI', email: 'kemenkeu@kemenkeu.go.id', customerCode: 'kemenkeu@kemenkeu.go.id' },
+          invoiceDate: '2026-08-27',
           issueDate: '2026-08-27',
           dueDate: '2026-09-16',
           subtotal: 720000000,
@@ -181,11 +186,43 @@ const Sales: React.FC = () => {
           totalAmount: 799200000,
           amountDue: 799200000,
           status: 'PENDING',
+          postingStatus: 'POSTED',
         },
       ];
     }
     return [];
   }, [invoices, isDemoMode]);
+
+  const effectiveCustomers = useMemo(() => {
+    if (customers.length > 0) return customers;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'cust-1',
+          customerCode: 'CUST-001',
+          name: 'PT. Astra International',
+          legalName: 'PT Astra International Tbk',
+          email: 'billing@astra.co.id',
+          phone: '021-65300000',
+          paymentTermsDays: 30,
+          creditLimit: 5000000000,
+          isActive: true,
+        },
+        {
+          id: 'cust-2',
+          customerCode: 'CUST-002',
+          name: 'Kementerian Keuangan RI',
+          legalName: 'Kementerian Keuangan Republik Indonesia',
+          email: 'kemenkeu@kemenkeu.go.id',
+          phone: '021-3840882',
+          paymentTermsDays: 45,
+          creditLimit: 10000000000,
+          isActive: true,
+        },
+      ];
+    }
+    return [];
+  }, [customers, isDemoMode]);
 
   // Metrics overview calculation
   const metrics: Metric[] = useMemo(() => {
@@ -677,10 +714,10 @@ const Sales: React.FC = () => {
                           </p>
                         </td>
                         <td className="px-5 py-4 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          {invoice.invoiceDate.slice(0, 10)}
+                          {(invoice.invoiceDate || invoice.issueDate || '').slice(0, 10)}
                         </td>
                         <td className="px-5 py-4 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          {invoice.dueDate.slice(0, 10)}
+                          {(invoice.dueDate || '').slice(0, 10)}
                         </td>
                         <td className="px-5 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-300">
                           {formatCurrency(Number(invoice.subtotal))}
@@ -770,11 +807,11 @@ const Sales: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl text-[11px]">
                       <div>
                         <span className="text-[9px] text-slate-400 uppercase font-bold block">{t('issueDate')}</span>
-                        <span className="font-semibold">{invoice.invoiceDate.slice(0, 10)}</span>
+                        <span className="font-semibold">{(invoice.invoiceDate || invoice.issueDate || '').slice(0, 10)}</span>
                       </div>
                       <div>
                         <span className="text-[9px] text-slate-400 uppercase font-bold block">{t('dueDate')}</span>
-                        <span className="font-semibold">{invoice.dueDate.slice(0, 10)}</span>
+                        <span className="font-semibold">{(invoice.dueDate || '').slice(0, 10)}</span>
                       </div>
                     </div>
 
@@ -842,14 +879,14 @@ const Sales: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-700/30">
-                {customers.length === 0 ? (
+                {effectiveCustomers.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-12 text-xs text-slate-400">
                       No customers found. Click Add Customer to create a customer profile.
                     </td>
                   </tr>
                 ) : (
-                  customers.map((c) => (
+                  effectiveCustomers.map((c) => (
                     <tr
                       key={c.id}
                       className="group bg-transparent hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors"
