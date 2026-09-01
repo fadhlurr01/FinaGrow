@@ -99,6 +99,11 @@ const Vendors: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -106,6 +111,20 @@ const Vendors: React.FC = () => {
 
   const effectiveVendors = useMemo(() => {
     if (vendors.length > 0) return vendors;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'vnd-u1',
+          code: 'VND-0001',
+          name: 'CV. Mandiri Sembako',
+          legalName: 'CV Mandiri Sembako Pasar',
+          email: 'grosir.mukhtar@gmail.com',
+          phone: '0812-7000-0000',
+          contactPerson: 'Haji Mukhtar',
+          outstandingBalance: 12000000,
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -131,7 +150,7 @@ const Vendors: React.FC = () => {
       ];
     }
     return [];
-  }, [vendors, isDemoMode]);
+  }, [vendors, isDemoUser, isDemoMode]);
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();

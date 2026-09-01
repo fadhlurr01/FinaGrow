@@ -356,6 +356,11 @@ const CashBank: React.FC = () => {
     }
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -363,6 +368,30 @@ const CashBank: React.FC = () => {
 
   const effectiveAccounts = useMemo(() => {
     if (accounts.length > 0) return accounts;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'cb-u1',
+          code: '1001',
+          name: 'Cash Register Laci Utama',
+          bankName: 'UANG TUNAI CASH REGISTER',
+          type: 'CASH',
+          maskedAccountNumber: '**** **** 1001',
+          glBalance: 4200000,
+          coaAccount: { code: '1001', name: 'Cash Register Laci Utama' },
+        },
+        {
+          id: 'cb-u2',
+          code: '1002',
+          name: 'Bank Jatim UKM',
+          bankName: 'REKENING OPERASIONAL BANK LOKAL',
+          type: 'BANK',
+          maskedAccountNumber: '**** **** 1002',
+          glBalance: 40000000,
+          coaAccount: { code: '1002', name: 'Bank Jatim UKM' },
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -398,7 +427,7 @@ const CashBank: React.FC = () => {
       ];
     }
     return [];
-  }, [accounts, isDemoMode]);
+  }, [accounts, isDemoUser, isDemoMode]);
 
   const effectiveTotalCash = useMemo(() => {
     return effectiveAccounts.reduce((sum: number, a: any) => sum + (Number(a.glBalance) || 0), 0);
@@ -408,11 +437,11 @@ const CashBank: React.FC = () => {
     <div className="container mx-auto space-y-6 font-sans">
       {/* Metrics Banner */}
       {(() => {
-        const displayBalance = effectiveAccounts.length > 0 ? effectiveTotalCash : 1965048000;
+        const displayBalance = effectiveAccounts.length > 0 ? effectiveTotalCash : (isDemoUser ? 44200000 : 1965048000);
         const calcInflow = payments.filter((p: any) => p.type === 'CUSTOMER_RECEIPT').reduce((s: number, p: any) => s + Number(p.amount), 0);
-        const displayInflow = calcInflow > 0 ? calcInflow : (isDemoMode ? 350048000 : 0);
+        const displayInflow = calcInflow > 0 ? calcInflow : (isDemoUser ? 3500000 : (isDemoMode ? 350048000 : 0));
         const calcOutflow = payments.filter((p: any) => p.type === 'VENDOR_PAYMENT').reduce((s: number, p: any) => s + Number(p.amount), 0);
-        const displayOutflow = calcOutflow > 0 ? calcOutflow : (isDemoMode ? 330000000 : 0);
+        const displayOutflow = calcOutflow > 0 ? calcOutflow : (isDemoUser ? 6800000 : (isDemoMode ? 330000000 : 0));
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

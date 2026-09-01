@@ -104,6 +104,11 @@ const Budgeting: React.FC = () => {
     return coaAccounts.filter(acc => acc.type === 'EXPENSE' || acc.type === 'REVENUE');
   }, [coaAccounts]);
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -111,6 +116,21 @@ const Budgeting: React.FC = () => {
 
   const effectiveBudgets = useMemo(() => {
     if (budgets.length > 0) return budgets;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'bg-u1',
+          accountId: 'acc-5200',
+          accountCode: '5200',
+          accountName: 'Beban Listrik & Air Ruko',
+          period: selectedPeriod || '2026-09',
+          amount: 2000000,
+          actualSpent: 0,
+          remaining: 2000000,
+          utilization: 0,
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -138,7 +158,7 @@ const Budgeting: React.FC = () => {
       ];
     }
     return [];
-  }, [budgets, selectedPeriod, isDemoMode]);
+  }, [budgets, selectedPeriod, isDemoUser, isDemoMode]);
 
   // Overall calculations
   const summary = useMemo(() => {

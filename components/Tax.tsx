@@ -272,6 +272,11 @@ const Tax: React.FC = () => {
     }
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -293,6 +298,10 @@ const Tax: React.FC = () => {
         ) : true;
         return matchesType && matchesDir && matchesSearch;
       });
+    }
+
+    if (isDemoUser) {
+      return [];
     }
 
     if (isDemoMode) {
@@ -337,12 +346,12 @@ const Tax: React.FC = () => {
     }
 
     return [];
-  }, [transactions, taxTypeFilter, directionFilter, searchTerm, isDemoMode]);
+  }, [transactions, taxTypeFilter, directionFilter, searchTerm, isDemoUser, isDemoMode]);
 
   // Derive VAT values
-  const outputVatValue = isDemoMode && !vatSummary ? 117700000 : (vatSummary ? Number(vatSummary.outputVat) : 0);
-  const inputVatValue = isDemoMode && !vatSummary ? 10450000 : (vatSummary ? Number(vatSummary.inputVat) : 0);
-  const netVatValue = isDemoMode && !vatSummary ? 107250000 : (vatSummary ? Number(vatSummary.netVat) : 0);
+  const outputVatValue = isDemoUser ? 0 : (isDemoMode && !vatSummary ? 117700000 : (vatSummary ? Number(vatSummary.outputVat) : 0));
+  const inputVatValue = isDemoUser ? 0 : (isDemoMode && !vatSummary ? 10450000 : (vatSummary ? Number(vatSummary.inputVat) : 0));
+  const netVatValue = isDemoUser ? 0 : (isDemoMode && !vatSummary ? 107250000 : (vatSummary ? Number(vatSummary.netVat) : 0));
 
   return (
     <div className="space-y-6">

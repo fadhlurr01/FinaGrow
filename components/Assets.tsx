@@ -181,6 +181,11 @@ export const Assets: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -188,6 +193,55 @@ export const Assets: React.FC = () => {
 
   const effectiveAssets = useMemo(() => {
     if (assets.length > 0) return assets;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'ast-u1',
+          assetNumber: 'AST-EQP-001',
+          name: 'MacBook Pro M3 Max 16" (Desain)',
+          categoryId: 'cat-eqp',
+          category: { name: 'EQUIPMENT' },
+          acquisitionCost: 45000000,
+          accumulatedDepreciation: 30000000,
+          usefulLifeMonths: 48,
+          depreciationMethod: 'STRAIGHT_LINE',
+          acquisitionDate: '2024-01-15',
+          status: 'ACTIVE',
+          location: 'Kantor Desain',
+          custodian: 'Desainer Grafis',
+        },
+        {
+          id: 'ast-u2',
+          assetNumber: 'AST-BLD-001',
+          name: 'Ruko Sentra Kemang (Kantor)',
+          categoryId: 'cat-bld',
+          category: { name: 'BUILDING' },
+          acquisitionCost: 1500000000,
+          accumulatedDepreciation: 412500000,
+          usefulLifeMonths: 240,
+          depreciationMethod: 'STRAIGHT_LINE',
+          acquisitionDate: '2021-03-01',
+          status: 'ACTIVE',
+          location: 'Sentra Kemang',
+          custodian: 'General Affairs',
+        },
+        {
+          id: 'ast-u3',
+          assetNumber: 'AST-VEH-001',
+          name: 'Toyota Avanza Operasional',
+          categoryId: 'cat-veh',
+          category: { name: 'VEHICLE' },
+          acquisitionCost: 260000000,
+          accumulatedDepreciation: 138125000,
+          usefulLifeMonths: 96,
+          depreciationMethod: 'STRAIGHT_LINE',
+          acquisitionDate: '2022-06-10',
+          status: 'ACTIVE',
+          location: 'Garasi Ruko',
+          custodian: 'Driver Operasional',
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -208,7 +262,7 @@ export const Assets: React.FC = () => {
       ];
     }
     return [];
-  }, [assets, isDemoMode]);
+  }, [assets, isDemoUser, isDemoMode]);
 
   // Filtered Assets
   const filteredAssets = useMemo(() => {
@@ -225,6 +279,17 @@ export const Assets: React.FC = () => {
 
   // Overall KPIs
   const kpis = useMemo(() => {
+    if (isDemoUser) {
+      return {
+        totalCost: 1805000000,
+        totalAccumDeprec: 580625000,
+        totalNBV: 1224375000,
+        activeCount: 3,
+        draftCount: 0,
+        fullyDeprecCount: 0,
+        disposedCount: 0,
+      };
+    }
     if (isDemoMode && effectiveAssets.length > 0) {
       return {
         totalCost: 180000000,
