@@ -225,9 +225,23 @@ const Entities: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const isDemoMode = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase().includes('demo') || (state.currentUserEmail || '').toLowerCase().includes('admin@finagrow.com') || !state.currentUserEmail;
+                const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+                const isDemoUser = activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+                const isDemoMode = activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
 
-                const demoEntitiesFallback = [
+                const demoUserEntitiesFallback = [
+                  {
+                    id: 'ent-rt',
+                    code: 'RT',
+                    name: 'Retail Sentosa Abadi',
+                    legalName: 'UD Retail Sentosa Abadi',
+                    baseCurrency: 'IDR',
+                    country: 'ID',
+                    timezone: 'Asia/Jakarta',
+                  },
+                ];
+
+                const demoAdminEntitiesFallback = [
                   {
                     id: 'ent-bc',
                     code: 'BC',
@@ -248,7 +262,7 @@ const Entities: React.FC = () => {
                   },
                 ];
 
-                const list = entities.length > 0 ? entities : (isDemoMode ? demoEntitiesFallback : []);
+                const list = entities.length > 0 ? entities : (isDemoUser ? demoUserEntitiesFallback : (isDemoMode ? demoAdminEntitiesFallback : []));
 
                 if (list.length === 0) {
                   return (
@@ -261,7 +275,7 @@ const Entities: React.FC = () => {
                 }
 
                 return list.map((entity) => {
-                  const isActive = entity.code === 'BC' || entity.id === state.activeEntityId || entity.code === state.activeEntity;
+                  const isActive = (isDemoUser && entity.code === 'RT') || entity.code === 'BC' || entity.id === state.activeEntityId || entity.code === state.activeEntity;
                   return (
                     <tr key={entity.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition">
                       <td className="px-6 py-4 font-mono font-bold text-slate-800 dark:text-slate-200">

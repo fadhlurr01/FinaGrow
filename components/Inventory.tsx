@@ -413,6 +413,11 @@ export const Inventory: React.FC = () => {
     }
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -420,6 +425,40 @@ export const Inventory: React.FC = () => {
 
   const effectiveItems = useMemo(() => {
     if (items.length > 0) return items;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'sku-u1',
+          sku: 'SB-01',
+          name: 'Beras Premium Rajalele 10kg',
+          description: 'Beras pandan wangi premium kemasan karung 10kg',
+          category: { name: 'FOOD' },
+          valuationMethod: 'FIFO',
+          quantityOnHand: 40,
+          unitOfMeasure: { code: 'bags' },
+          averageCost: 145000,
+          inventoryValue: 5800000,
+          sellingPrice: 165000,
+          purchasePrice: 145000,
+          reorderLevel: 10,
+        },
+        {
+          id: 'sku-u2',
+          sku: 'MG-02',
+          name: 'Minyak Goreng Bimoli 2L',
+          description: 'Minyak goreng kelapa sawit botol 2 liter',
+          category: { name: 'FOOD' },
+          valuationMethod: 'AVG',
+          quantityOnHand: 120,
+          unitOfMeasure: { code: 'bottles' },
+          averageCost: 34000,
+          inventoryValue: 4080000,
+          sellingPrice: 38000,
+          purchasePrice: 34000,
+          reorderLevel: 20,
+        },
+      ] as any[];
+    }
     if (isDemoMode) {
       return [
         {
@@ -455,7 +494,7 @@ export const Inventory: React.FC = () => {
       ] as any[];
     }
     return [];
-  }, [items, isDemoMode]);
+  }, [items, isDemoUser, isDemoMode]);
 
   const totalInventoryValuation = effectiveItems.reduce((sum, i) => sum + (i.inventoryValue || 0), 0);
   const totalStockUnits = effectiveItems.reduce((sum, i) => sum + (i.quantityOnHand || 0), 0);
