@@ -92,6 +92,11 @@ const ChartOfAccounts: React.FC = () => {
     fetchAccounts();
   }, [fetchAccounts]);
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -112,6 +117,20 @@ const ChartOfAccounts: React.FC = () => {
           openingBalance: (a as any).openingBalance || 0,
           isSystem: a.isSystem,
         }));
+    }
+
+    if (isDemoUser) {
+      return [
+        { id: 'coa-u1001', code: '1001', name: 'Cash Register Laci Utama', description: 'Uang tunai cash register', type: 'Asset' as COAAccount['type'], openingBalance: 2500000 },
+        { id: 'coa-u1002', code: '1002', name: 'Bank Jatim UKM', description: 'Rekening operasional bank lokal', type: 'Asset' as COAAccount['type'], openingBalance: 45000000 },
+        { id: 'coa-u1100', code: '1100', name: 'Piutang Langganan Warung', description: 'Piutang retail kecil', type: 'Asset' as COAAccount['type'], openingBalance: 7500000 },
+        { id: 'coa-u1200', code: '1200', name: 'Persediaan Sembako & Barang', description: 'Stok dagangan toko', type: 'Asset' as COAAccount['type'], openingBalance: 50000000 },
+        { id: 'coa-u2000', code: '2000', name: 'Utang Agen Supplier Sembako', description: 'Utang ke grosiran', type: 'Liability' as COAAccount['type'], openingBalance: 12000000 },
+        { id: 'coa-u3000', code: '3000', name: 'Modal Muklas Pribadi', description: 'Modal awal pendiri toko', type: 'Equity' as COAAccount['type'], openingBalance: 93000000 },
+        { id: 'coa-u4000', code: '4000', name: 'Pendapatan Retail Harian', description: 'Penjualan retail langsung sembako', type: 'Revenue' as COAAccount['type'], openingBalance: 0 },
+        { id: 'coa-u5100', code: '5100', name: 'Beban Gaji Karyawan Toko', description: 'Gaji penjaga kasir', type: 'Expense' as COAAccount['type'], openingBalance: 0 },
+        { id: 'coa-u5200', code: '5200', name: 'Beban Listrik & Air Ruko', description: 'Biaya utilitas toko bulanan', type: 'Expense' as COAAccount['type'], openingBalance: 0 },
+      ];
     }
 
     if (isDemoMode) {
@@ -135,7 +154,7 @@ const ChartOfAccounts: React.FC = () => {
     }
 
     return [];
-  }, [apiAccounts, isDemoMode]);
+  }, [apiAccounts, isDemoUser, isDemoMode]);
 
   // Filtered accounts list
   const filteredAccounts = useMemo(() => {

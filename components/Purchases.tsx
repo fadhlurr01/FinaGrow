@@ -172,6 +172,11 @@ const Purchases: React.FC = () => {
     }).format(amount);
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -179,6 +184,9 @@ const Purchases: React.FC = () => {
 
   const effectiveBills = useMemo(() => {
     if (bills.length > 0) return bills;
+    if (isDemoUser) {
+      return [];
+    }
     if (isDemoMode) {
       return [
         {
@@ -196,10 +204,39 @@ const Purchases: React.FC = () => {
       ];
     }
     return [];
-  }, [bills, isDemoMode]);
+  }, [bills, isDemoUser, isDemoMode]);
 
   // Metrics summary
   const metrics: Metric[] = useMemo(() => {
+    if (isDemoUser) {
+      return [
+        {
+          title: language === 'en' ? 'TOTAL PAYABLES' : 'TOTAL UTANG USAHA',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+        },
+        {
+          title: language === 'en' ? 'OVERDUE BILLS' : 'UTANG JATUH TEMPO',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+        },
+        {
+          title: language === 'en' ? 'PAID THIS MONTH' : 'DIBAYAR BULAN INI',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+        },
+        {
+          title: language === 'en' ? 'AVG. BILL VALUE' : 'RATA-RATA TAGIHAN',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+        },
+      ];
+    }
+
     if (isDemoMode && effectiveBills.length > 0) {
       return [
         {

@@ -149,6 +149,11 @@ const Sales: React.FC = () => {
     }).format(amount);
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -156,6 +161,25 @@ const Sales: React.FC = () => {
 
   const effectiveInvoices = useMemo(() => {
     if (invoices.length > 0) return invoices;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'inv-u1',
+          invoiceNumber: 'INV-RT-2026-001',
+          customerId: 'cust-u1',
+          customer: { name: 'Katering Ibu Rahma', email: 'rahma@gmail.com', customerCode: 'rahma@gmail.com' },
+          invoiceDate: '2026-08-28',
+          issueDate: '2026-08-28',
+          dueDate: '2026-09-02',
+          subtotal: 7500000,
+          taxAmount: 825000,
+          totalAmount: 8325000,
+          amountDue: 8325000,
+          status: 'PENDING',
+          postingStatus: 'POSTED',
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -191,10 +215,25 @@ const Sales: React.FC = () => {
       ];
     }
     return [];
-  }, [invoices, isDemoMode]);
+  }, [invoices, isDemoUser, isDemoMode]);
 
   const effectiveCustomers = useMemo(() => {
     if (customers.length > 0) return customers;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'cust-u1',
+          customerCode: 'CUST-001',
+          name: 'Katering Ibu Rahma',
+          legalName: 'Usaha Katering Rahma',
+          email: 'rahma@gmail.com',
+          phone: '0812-9988-7766',
+          paymentTermsDays: 5,
+          creditLimit: 20000000,
+          isActive: true,
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -222,10 +261,43 @@ const Sales: React.FC = () => {
       ];
     }
     return [];
-  }, [customers, isDemoMode]);
+  }, [customers, isDemoUser, isDemoMode]);
 
   // Metrics overview calculation
   const metrics: Metric[] = useMemo(() => {
+    if (isDemoUser) {
+      return [
+        {
+          title: language === 'en' ? 'TOTAL RECEIVABLES' : 'TOTAL PIUTANG USAHA',
+          value: formatCurrency(7500000),
+          change: '+5.8%',
+          changeType: 'increase',
+          icon: ScaleIcon,
+        },
+        {
+          title: language === 'en' ? 'OVERDUE INVOICES' : 'FAKTUR JATUH TEMPO',
+          value: formatCurrency(0),
+          change: '0.0%',
+          changeType: 'increase',
+          icon: ArrowTrendingUpIcon,
+        },
+        {
+          title: language === 'en' ? 'AVG. INVOICE VALUE' : 'RATA-RATA NILAI FAKTUR',
+          value: formatCurrency(7500000),
+          change: '-1.1%',
+          changeType: 'decrease',
+          icon: BanknotesIcon,
+        },
+        {
+          title: language === 'en' ? 'REVENUE (YTD)' : 'PENDAPATAN (YTD)',
+          value: formatCurrency(7500000),
+          change: '+22.0%',
+          changeType: 'increase',
+          icon: DocumentPlusIcon,
+        },
+      ];
+    }
+
     if (isDemoMode && effectiveInvoices.length > 0) {
       return [
         {

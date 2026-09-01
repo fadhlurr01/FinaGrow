@@ -77,6 +77,11 @@ const Dashboard: React.FC = () => {
     dispatch({ type: 'SET_VIEW', payload: 'Chart of Accounts' });
   };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -84,6 +89,18 @@ const Dashboard: React.FC = () => {
 
   const effectiveChartData = useMemo(() => {
     if (chartData.length > 0) return chartData;
+    if (isDemoUser) {
+      return [
+        { name: 'Jan', revenue: 1500000, expenses: 2000000 },
+        { name: 'Feb', revenue: 2200000, expenses: 2500000 },
+        { name: 'Mar', revenue: 2800000, expenses: 3100000 },
+        { name: 'Apr', revenue: 3000000, expenses: 3200000 },
+        { name: 'May', revenue: 3200000, expenses: 4000000 },
+        { name: 'Jun', revenue: 3400000, expenses: 5000000 },
+        { name: 'Jul', revenue: 3500000, expenses: 6800000 },
+        { name: 'Aug', revenue: 3500000, expenses: 6800000 },
+      ];
+    }
     if (isDemoMode) {
       return [
         { name: 'Jan', revenue: 120000000, expenses: 90000000 },
@@ -97,11 +114,19 @@ const Dashboard: React.FC = () => {
       ];
     }
     return [];
-  }, [chartData, isDemoMode]);
+  }, [chartData, isDemoUser, isDemoMode]);
 
   const effectiveWatchlist = useMemo(() => {
     if (summary?.accountWatchlist && summary.accountWatchlist.length > 0) {
       return summary.accountWatchlist;
+    }
+    if (isDemoUser) {
+      return [
+        { id: 'w1', name: 'Petty Cash', code: '1001 - Operational petty cash', type: 'ASSET', currentBalance: -1200000 },
+        { id: 'w2', name: 'Bank BCA Account', code: '1002 - Primary BCA bank account', type: 'ASSET', currentBalance: 40000000 },
+        { id: 'w3', name: 'Accounts Receivable', code: '1100 - Receivable from customers', type: 'ASSET', currentBalance: 7500000 },
+        { id: 'w4', name: 'Accounts Payable', code: '2000 - Payable to raw suppliers', type: 'LIABILITY', currentBalance: 12000000 },
+      ];
     }
     if (isDemoMode) {
       return [
@@ -113,10 +138,47 @@ const Dashboard: React.FC = () => {
       ];
     }
     return [];
-  }, [summary, isDemoMode]);
+  }, [summary, isDemoUser, isDemoMode]);
 
   const effectiveRecentTransactions = useMemo(() => {
     if (recentTransactions.length > 0) return recentTransactions;
+    if (isDemoUser) {
+      return [
+        {
+          id: 'tx-u1',
+          date: '2026-09-01',
+          description: 'Penjualan Retail Kasir Sesi Pagi',
+          category: 'Sales',
+          type: 'income',
+          amount: 3500000,
+          status: 'Completed',
+          dr: '1001 - Cash Register Laci Utama',
+          cr: '4000 - Pendapatan Retail Harian',
+        },
+        {
+          id: 'tx-u2',
+          date: '2026-08-31',
+          description: 'Belanja Stok Sembako Pasar Anyar',
+          category: 'Operational',
+          type: 'expense',
+          amount: 1800000,
+          status: 'Completed',
+          dr: '1200 - Persediaan Sembako & Barang',
+          cr: '1001 - Cash Register Laci Utama',
+        },
+        {
+          id: 'tx-u3',
+          date: '2026-08-30',
+          description: 'Gaji Bulanan 2 Kasir Toko',
+          category: 'Payroll',
+          type: 'expense',
+          amount: 5000000,
+          status: 'Completed',
+          dr: '5100 - Beban Gaji Karyawan Toko',
+          cr: '1002 - Bank Jatim UKM',
+        },
+      ];
+    }
     if (isDemoMode) {
       return [
         {
@@ -177,7 +239,7 @@ const Dashboard: React.FC = () => {
       ];
     }
     return [];
-  }, [recentTransactions, isDemoMode]);
+  }, [recentTransactions, isDemoUser, isDemoMode]);
 
   const metrics: Metric[] = useMemo(() => {
     if (summary && (summary.totalRevenue > 0 || summary.cashBalance > 0)) {
@@ -204,6 +266,35 @@ const Dashboard: React.FC = () => {
           title: t('cashBalance') || 'Cash & Bank Balance',
           value: formatCurrency(summary.cashBalance),
           change: summary.cashBalanceChangePercent,
+          changeType: 'decrease',
+        },
+      ];
+    }
+
+    if (isDemoUser) {
+      return [
+        {
+          title: t('totalRevenue') || 'TOTAL REVENUE',
+          value: formatCurrency(3500000),
+          change: '+14.2%',
+          changeType: 'increase',
+        },
+        {
+          title: t('totalExpenses') || 'TOTAL EXPENSES',
+          value: formatCurrency(6800000),
+          change: '+5.7%',
+          changeType: 'increase',
+        },
+        {
+          title: t('netProfit') || 'NET PROFIT',
+          value: `-IDR 3,300,000`,
+          change: '+22.5%',
+          changeType: 'increase',
+        },
+        {
+          title: t('cashBalance') || 'CASH BALANCE',
+          value: formatCurrency(44200000),
+          change: '-1.4%',
           changeType: 'decrease',
         },
       ];

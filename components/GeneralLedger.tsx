@@ -200,6 +200,11 @@ const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
   '6800': { code: '6800', name: 'Beban Administrasi Bank' },
 };
 
+  const isDemoUser = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo_user') || (activeEmail.includes('demo') && (state.role === 'User' || state.subscription === 'Free'));
+  }, [state.currentUserEmail, state.role, state.subscription]);
+
   const isDemoMode = useMemo(() => {
     const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
     return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
@@ -229,6 +234,44 @@ const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
           };
         }),
       }));
+    }
+
+    if (isDemoUser) {
+      return [
+        {
+          id: 'je-u1',
+          entryNumber: 'JE-0001',
+          date: '2026-09-01',
+          description: 'Penjualan Retail Kasir Sesi Pagi',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_1001 - AC_1001', debit: 3500000, credit: 0 },
+            { accountName: 'AC_4000 - AC_4000', debit: 0, credit: 3500000 },
+          ],
+        },
+        {
+          id: 'je-u2',
+          entryNumber: 'JE-0002',
+          date: '2026-08-31',
+          description: 'Belanja Stok Sembako Pasar Anyar',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_1200 - AC_1200', debit: 1800000, credit: 0 },
+            { accountName: 'AC_1001 - AC_1001', debit: 0, credit: 1800000 },
+          ],
+        },
+        {
+          id: 'je-u3',
+          entryNumber: 'JE-0003',
+          date: '2026-08-30',
+          description: 'Gaji Bulanan 2 Kasir Toko',
+          status: 'POSTED',
+          lines: [
+            { accountName: 'AC_5100 - AC_5100', debit: 5000000, credit: 0 },
+            { accountName: 'AC_1002 - AC_1002', debit: 0, credit: 5000000 },
+          ],
+        },
+      ];
     }
 
     if (isDemoMode) {
@@ -292,7 +335,7 @@ const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
     }
 
     return [];
-  }, [apiEntries, apiAccounts, state.coa, isDemoMode]);
+  }, [apiEntries, apiAccounts, state.coa, isDemoUser, isDemoMode]);
 
   const availableAccounts = apiAccounts;
 
