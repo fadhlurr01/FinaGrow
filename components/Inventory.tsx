@@ -127,7 +127,7 @@ export const Inventory: React.FC = () => {
     unitCost: 0,
   });
 
-  const activeEntityId = state.currentEntity?.id || 'default-entity';
+  const activeEntityId = localStorage.getItem('fms_active_entity_id') || state.activeEntityId || 'default-entity';
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat(language === 'id' ? 'id-ID' : 'en-US', {
