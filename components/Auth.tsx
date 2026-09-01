@@ -77,13 +77,28 @@ const localAuthTrans = {
     leftCheck3: "Automated real-time multi-warehouse inventory valuation",
     leftCheck4: "AI Financial Assistant context-driven analytical insights",
     systemStatus: "Security Standard: AES-256 Bit Encryption",
+    planSelectionTitle: "Choose Membership Tier (Pricing Range)",
+    planSelectionSubtitle: "Select the pricing package tailored to your organization",
+    planStarter: "Free Starter",
+    planStarterPrice: "Rp 0",
+    planStarterPeriod: "/mo",
+    planStarterDesc: "1 User • 1 Entity • Standard Cash & GL",
+    planPro: "Pro Business",
+    planProPrice: "Rp 299k",
+    planProPeriod: "/mo",
+    planProDesc: "5 Users • Multi-Entity • VAT/PPh • FIFO Stock",
+    planEnterprise: "Enterprise Suite",
+    planEnterprisePrice: "Rp 999k",
+    planEnterprisePeriod: "/mo",
+    planEnterpriseDesc: "Unlimited • Multi-Currency • Dedicated SLA",
+    popularBadge: "MOST POPULAR",
   },
   id: {
     backToHome: "Kembali ke Beranda",
     signInTitle: "Masuk ke FINAGROW Suite",
     signInSubtitle: "Sambungkan dengan buku besar keuangan terpadu Anda",
     signUpTitle: "Daftar Akun Baru",
-    signUpSubtitle: "Mulai uji coba gratis 14 hari Anda. Tanpa kartu kredit.",
+    signUpSubtitle: "Pilih paket berlangganan & mulai kelola keuangan bisnis Anda.",
     fullName: "Nama Lengkap",
     fullNamePlaceholder: "misal. Dian Sastrowardoyo",
     phoneNumber: "Nomor Telepon",
@@ -97,10 +112,10 @@ const localAuthTrans = {
     rememberMe: "Ingat saya selama 30 hari",
     forgotPassword: "Lupa kata sandi?",
     signInBtn: "Masuk Secara Aman",
-    signUpBtn: "Daftar & Dapatkan Akses",
+    signUpBtn: "Daftar & Gabung Sekarang",
     noAccount: "Belum memiliki akun FINAGROW?",
     haveAccount: "Sudah memiliki akun?",
-    trialOffer: "Mulai uji coba gratis 14 hari",
+    trialOffer: "Mulai daftar akun & pilih paket",
     loginInstead: "Masuk saja",
     demoAccountNotice: "⚡ Akses Cepat Demo",
     useDemoAdmin: "Masuk sebagai Admin Demo",
@@ -122,6 +137,21 @@ const localAuthTrans = {
     leftCheck3: "Penilaian inventaris gudang real-time multi-lokasi",
     leftCheck4: "Asisten Keuangan AI interaktif berbasis konteks riil",
     systemStatus: "Standar Keamanan: Enkripsi Perbankan AES-256 Bit",
+    planSelectionTitle: "Pilih Rentang Paket & Harga Berlangganan",
+    planSelectionSubtitle: "Pilih paket keuangan sebelum bergabung dengan FINAGROW",
+    planStarter: "Free Starter",
+    planStarterPrice: "Rp 0",
+    planStarterPeriod: "/bln",
+    planStarterDesc: "1 Pengguna • 1 Entitas • Pembukuan Dasar",
+    planPro: "Pro Business",
+    planProPrice: "Rp 299rb",
+    planProPeriod: "/bln",
+    planProDesc: "5 Pengguna • Multi-Entitas • PPN/PPh • Stok FIFO",
+    planEnterprise: "Enterprise Suite",
+    planEnterprisePrice: "Rp 999rb",
+    planEnterprisePeriod: "/bln",
+    planEnterpriseDesc: "Unlimited • Multi-Valuta • SLA Dedicated",
+    popularBadge: "REKOMENDASI",
   }
 };
 
@@ -134,6 +164,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PRO' | 'ENTERPRISE'>('PRO');
   
   // Eye toggles
   const [showPassword, setShowPassword] = useState(false);
@@ -176,7 +207,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
       localStorage.setItem('fms_active_user_email', targetEmail);
       localStorage.setItem('fms_active_user_name', authRes.user.fullName || (roleToUse === 'Admin' ? 'Demo Admin' : 'Demo User'));
       
-      const assignedRole = (authRes.role === 'OWNER' || authRes.role === 'ADMIN') ? 'Admin' : 'User';
+      const assignedRole = roleToUse === 'Admin' ? 'Admin' : 'User';
 
       dispatch({
         type: 'LOGIN_USER',
@@ -184,7 +215,7 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           email: targetEmail,
           stateData: {
             role: assignedRole,
-            subscription: 'Pro',
+            subscription: roleToUse === 'Admin' ? 'Pro' : 'Free',
             activeEntityId: authRes.entity?.id || '',
             activeEntity: authRes.entity?.name || authRes.entity?.code || 'HQ-01',
           },
@@ -249,20 +280,28 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           localStorage.setItem('fms_active_entity_id', regRes.entity.id);
         }
 
+        // Apply selected pricing tier
+        try {
+          await subscriptionApi.changePlan(selectedPlan);
+        } catch (_) {}
+
+        const chosenSub = selectedPlan === 'FREE' ? 'Free' : 'Pro';
+
+        // Set strictly to 'User' mode for standard registered users (separated from Admin mode)
         dispatch({
           type: 'LOGIN_USER',
           payload: { 
             email: normalEmail, 
             stateData: { 
-              role: 'Admin', // Owner of new organization
-              subscription: 'Free',
+              role: 'User', // Mode User Biasa (Bukan Mode Admin)
+              subscription: chosenSub,
               activeEntityId: regRes.entity?.id || '',
               activeEntity: regRes.entity?.name || regRes.entity?.code || 'HQ-01',
             } 
           }
         });
 
-        setSuccess(language === 'id' ? 'Pendaftaran berhasil! Mengalihkan...' : 'Registration successful! Launching workspace...');
+        setSuccess(language === 'id' ? `Pendaftaran berhasil dengan Paket ${selectedPlan === 'FREE' ? 'Free Starter' : selectedPlan === 'PRO' ? 'Pro Business' : 'Enterprise Suite'}! Mengalihkan ke ruang kerja...` : `Registration successful on ${selectedPlan} tier! Launching workspace...`);
         setTimeout(() => {
           setIsLoading(false);
           onNavigate('app');
@@ -292,7 +331,8 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
           localStorage.setItem('fms_active_entity_id', authRes.entity.id);
         }
 
-        const assignedRole = authRes.role === 'OWNER' || authRes.role === 'ADMIN' ? 'Admin' : 'User';
+        // Strict Separation: Only explicit admin accounts get Admin role; standard users get User role
+        const assignedRole = (normalEmail === 'demo_admin@fms.com' || normalEmail === 'admin@finagrow.com') ? 'Admin' : 'User';
         dispatch({
           type: 'LOGIN_USER',
           payload: { 
@@ -572,33 +612,115 @@ const Auth: React.FC<AuthProps> = ({ mode: initialMode, onNavigate }) => {
               </div>
             </div>
 
-            {/* REGISTER ONLY INPUT: CONFIRM PASSWORD WITH EYE INTEGRATOR */}
+            {/* REGISTER ONLY INPUTS: CONFIRM PASSWORD & PLAN SELECTION */}
             {mode === 'register' && (
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1 pl-1">
-                  {t('confirmPassword')} <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <LockKeyhole className="w-4.5 h-4.5" />
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1 pl-1">
+                    {t('confirmPassword')} <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <LockKeyhole className="w-4.5 h-4.5" />
+                    </div>
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      placeholder={t('confirmPasswordPlaceholder')}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full pl-11 pr-11 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-emerald-400 dark:focus:border-emerald-400 transition-all font-semibold text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-450 hover:text-slate-650 cursor-pointer"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                    </button>
                   </div>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    placeholder={t('confirmPasswordPlaceholder')}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-11 pr-11 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-emerald-400 dark:focus:border-emerald-400 transition-all font-semibold text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-450 hover:text-slate-650 cursor-pointer"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                  </button>
                 </div>
-              </div>
+
+                {/* 4. RENTANG HARGA / PAKET BERLANGGANAN SELECTOR */}
+                <div className="space-y-2.5 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest pl-1">
+                      {t('planSelectionTitle')} <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black">
+                      {selectedPlan === 'FREE' ? 'Free (Rp 0)' : selectedPlan === 'PRO' ? 'Pro (Rp 299k)' : 'Enterprise (Rp 999k)'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 pl-1 leading-tight">{t('planSelectionSubtitle')}</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                    {/* Plan 1: Free Starter */}
+                    <div
+                      onClick={() => setSelectedPlan('FREE')}
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
+                        selectedPlan === 'FREE'
+                          ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 shadow-sm ring-1 ring-emerald-500'
+                          : 'bg-slate-50/50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-slate-800 dark:text-white">{t('planStarter')}</span>
+                        {selectedPlan === 'FREE' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                      </div>
+                      <div className="my-1">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{t('planStarterPrice')}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">{t('planStarterPeriod')}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">{t('planStarterDesc')}</p>
+                    </div>
+
+                    {/* Plan 2: Pro Business */}
+                    <div
+                      onClick={() => setSelectedPlan('PRO')}
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
+                        selectedPlan === 'PRO'
+                          ? 'bg-primary-50/70 dark:bg-primary-950/40 border-primary-500 shadow-md ring-2 ring-primary-500'
+                          : 'bg-slate-50/50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="absolute -top-2 right-2">
+                        <span className="px-1.5 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-black uppercase rounded-md shadow-sm">
+                          {t('popularBadge')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-slate-800 dark:text-white">{t('planPro')}</span>
+                        {selectedPlan === 'PRO' && <CheckCircle2 className="w-4 h-4 text-primary-500" />}
+                      </div>
+                      <div className="my-1">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{t('planProPrice')}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">{t('planProPeriod')}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">{t('planProDesc')}</p>
+                    </div>
+
+                    {/* Plan 3: Enterprise Suite */}
+                    <div
+                      onClick={() => setSelectedPlan('ENTERPRISE')}
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
+                        selectedPlan === 'ENTERPRISE'
+                          ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-500 shadow-sm ring-1 ring-indigo-500'
+                          : 'bg-slate-50/50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-slate-800 dark:text-white">{t('planEnterprise')}</span>
+                        {selectedPlan === 'ENTERPRISE' && <CheckCircle2 className="w-4 h-4 text-indigo-500" />}
+                      </div>
+                      <div className="my-1">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{t('planEnterprisePrice')}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">{t('planEnterprisePeriod')}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">{t('planEnterpriseDesc')}</p>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
 
             {/* REMEMBER ME & FORGOT PASSWORD (Only under Sign In) */}
