@@ -310,11 +310,82 @@ const Users: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
+                const isDemoMode = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase().includes('demo') || (state.currentUserEmail || '').toLowerCase().includes('admin@finagrow.com') || !state.currentUserEmail;
+
+                const demoUsersFallback = [
+                  {
+                    id: 'usr-demo-1',
+                    name: 'Demo Admin',
+                    seatId: 'SEAT ID: REG-3',
+                    email: 'demo_admin@fms.com',
+                    role: 'Admin',
+                    capacity: 'Pro Plan',
+                    status: 'ACTIVE',
+                    isLocked: true,
+                    raw: null,
+                  },
+                  {
+                    id: 'usr-demo-2',
+                    name: 'Demo Account',
+                    seatId: 'SEAT ID: REG-4',
+                    email: 'demo@fms.com',
+                    role: 'Admin',
+                    capacity: 'Pro Plan',
+                    status: 'ACTIVE',
+                    isLocked: true,
+                    raw: null,
+                  },
+                  {
+                    id: 'usr-demo-3',
+                    name: 'Andi Wijaya',
+                    seatId: 'SEAT ID: REG-0',
+                    email: 'andi@bellcorp.com',
+                    role: 'User',
+                    capacity: 'Free Plan',
+                    status: 'ACTIVE',
+                    isLocked: false,
+                    raw: null,
+                  },
+                  {
+                    id: 'usr-demo-4',
+                    name: 'Sari Indah',
+                    seatId: 'SEAT ID: REG-1',
+                    email: 'sari@bellcorp.com',
+                    role: 'User',
+                    capacity: 'Free Plan',
+                    status: 'ACTIVE',
+                    isLocked: false,
+                    raw: null,
+                  },
+                  {
+                    id: 'usr-demo-5',
+                    name: 'Demo User',
+                    seatId: 'SEAT ID: REG-2',
+                    email: 'demo_user@fms.com',
+                    role: 'User',
+                    capacity: 'Free Plan',
+                    status: 'ACTIVE',
+                    isLocked: false,
+                    raw: null,
+                  },
+                  {
+                    id: 'usr-demo-6',
+                    name: 'and',
+                    seatId: 'SEAT ID: REG-5',
+                    email: 'dkl@gmail.com',
+                    role: 'User',
+                    capacity: 'Free Plan',
+                    status: 'ACTIVE',
+                    isLocked: false,
+                    raw: null,
+                  },
+                ];
+
                 const newlyRegisteredFallback = state.currentUserEmail ? [
                   {
                     id: 'u-self',
                     name: localStorage.getItem('fms_active_user_name') || state.currentUserEmail.split('@')[0],
-                    seatId: 'SEAT ID: REG_0',
+                    seatId: 'SEAT ID: REG-0',
                     email: state.currentUserEmail,
                     role: state.role || 'User',
                     capacity: state.subscription === 'Pro' ? 'Pro Plan' : 'Free Plan',
@@ -328,7 +399,7 @@ const Users: React.FC = () => {
                   ? users.map((u, i) => ({
                       id: u.id,
                       name: u.name,
-                      seatId: `SEAT ID: REG_${i}`,
+                      seatId: `SEAT ID: REG-${i}`,
                       email: u.email,
                       role: u.role === 'OWNER' || u.role === 'ADMIN' ? 'Admin' : 'User',
                       capacity: u.role === 'OWNER' || u.role === 'ADMIN' ? 'Pro Plan' : 'Free Plan',
@@ -336,7 +407,7 @@ const Users: React.FC = () => {
                       isLocked: u.role === 'OWNER' || u.email === 'demo_admin@fms.com' || u.email === 'demo@fms.com',
                       raw: u,
                     }))
-                  : newlyRegisteredFallback;
+                  : (isDemoMode ? demoUsersFallback : newlyRegisteredFallback);
 
                 const filtered = listToRender.filter(u => {
                   const matchSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());

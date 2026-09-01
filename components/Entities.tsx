@@ -225,7 +225,30 @@ const Entities: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
               {(() => {
-                const list = entities;
+                const isDemoMode = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase().includes('demo') || (state.currentUserEmail || '').toLowerCase().includes('admin@finagrow.com') || !state.currentUserEmail;
+
+                const demoEntitiesFallback = [
+                  {
+                    id: 'ent-bc',
+                    code: 'BC',
+                    name: 'BellCorp Indonesia',
+                    legalName: 'PT. BellCorp Indonesia Tbk',
+                    baseCurrency: 'IDR',
+                    country: 'ID',
+                    timezone: 'Asia/Jakarta',
+                  },
+                  {
+                    id: 'ent-ob',
+                    code: 'OB',
+                    name: 'OptiBiz Global',
+                    legalName: 'OptiBiz Global Pte. Ltd.',
+                    baseCurrency: 'USD',
+                    country: 'SG',
+                    timezone: 'Asia/Singapore',
+                  },
+                ];
+
+                const list = entities.length > 0 ? entities : (isDemoMode ? demoEntitiesFallback : []);
 
                 if (list.length === 0) {
                   return (

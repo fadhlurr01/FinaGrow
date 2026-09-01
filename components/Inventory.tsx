@@ -413,11 +413,55 @@ export const Inventory: React.FC = () => {
     }
   };
 
-  const totalInventoryValuation = items.reduce((sum, i) => sum + (i.inventoryValue || 0), 0);
-  const totalStockUnits = items.reduce((sum, i) => sum + (i.quantityOnHand || 0), 0);
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
+  const effectiveItems = useMemo(() => {
+    if (items.length > 0) return items;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'sku-1',
+          sku: 'SVR-DL380',
+          name: 'Central Hardware Server Cluster DL380',
+          description: 'Server cluster hardware rack 2U',
+          category: { name: 'HARDWARE' },
+          valuationMethod: 'FIFO',
+          quantityOnHand: 9,
+          unitOfMeasure: { code: 'units' },
+          averageCost: 150000000,
+          inventoryValue: 1350000000,
+          sellingPrice: 185000000,
+          purchasePrice: 150000000,
+          reorderLevel: 2,
+        },
+        {
+          id: 'sku-2',
+          sku: 'RT-CIS-93',
+          name: 'Cisco Enterprise Layer 3 Router 9300',
+          description: 'High-throughput 48 port core router',
+          category: { name: 'NETWORK' },
+          valuationMethod: 'FIFO',
+          quantityOnHand: 15,
+          unitOfMeasure: { code: 'pcs' },
+          averageCost: 35000000,
+          inventoryValue: 525000000,
+          sellingPrice: 45000000,
+          purchasePrice: 35000000,
+          reorderLevel: 5,
+        },
+      ] as any[];
+    }
+    return [];
+  }, [items, isDemoMode]);
+
+  const totalInventoryValuation = effectiveItems.reduce((sum, i) => sum + (i.inventoryValue || 0), 0);
+  const totalStockUnits = effectiveItems.reduce((sum, i) => sum + (i.quantityOnHand || 0), 0);
 
   const displayValuation = totalInventoryValuation;
-  const displayItemsCount = items.length;
+  const displayItemsCount = effectiveItems.length;
   const displayTotalUnits = totalStockUnits;
 
   return (
@@ -653,7 +697,7 @@ export const Inventory: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {(() => {
-                  const list = items;
+                  const list = effectiveItems;
                   const filtered = list.filter(
                     (i) =>
                       i.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
