@@ -6,6 +6,14 @@ import {
   NormalBalance,
   JournalEntryStatus,
   CashBankAccountType,
+  TaxType,
+  TaxDirection,
+  TaxTransactionStatus,
+  TaxPeriodStatus,
+  TaxSourceType,
+  PaymentType,
+  PaymentStatus,
+  PaymentDirection,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -1328,8 +1336,272 @@ async function main() {
   });
 
   console.log(`Seeded Fixed Asset: ${assetServer.assetNumber} - ${assetServer.name}`);
-  console.log('Phase 7 Seed completed successfully.');
-  console.log('Phase 7 Seed completed successfully.');
+
+  // --- PHASE 8 TAXATION & VAT LEDGER SEED (Matching Screenshot 1) ---
+  const taxCodeOutputVAT = await prisma.taxCode.upsert({
+    where: { organizationId_code: { organizationId: organization.id, code: 'PPN-11' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      code: 'PPN-11',
+      name: 'PPN Standar 11% (Keluaran)',
+      taxType: TaxType.VAT,
+      direction: TaxDirection.OUTPUT,
+      description: 'Pajak Pertambahan Nilai 11% atas Penjualan / Faktur Pajak Keluaran',
+      isActive: true,
+    },
+  });
+
+  const taxCodeInputVAT = await prisma.taxCode.upsert({
+    where: { organizationId_code: { organizationId: organization.id, code: 'PPN-11-IN' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      code: 'PPN-11-IN',
+      name: 'PPN Masukan 11% (Dapat Dikreditkan)',
+      taxType: TaxType.VAT,
+      direction: TaxDirection.INPUT,
+      description: 'Pajak Pertambahan Nilai 11% atas Pembelian Barang/Jasa Kena Pajak',
+      isActive: true,
+    },
+  });
+
+  const taxRuleOutput = await prisma.taxRule.upsert({
+    where: { id: 'rule-ppn-11-out' },
+    update: {},
+    create: {
+      id: 'rule-ppn-11-out',
+      taxCodeId: taxCodeOutputVAT.id,
+      validFrom: new Date('2022-04-01'),
+      legalRate: new Decimal(0.11),
+      dppFactor: new Decimal(1.0),
+      isActive: true,
+    },
+  });
+
+  const taxRuleInput = await prisma.taxRule.upsert({
+    where: { id: 'rule-ppn-11-in' },
+    update: {},
+    create: {
+      id: 'rule-ppn-11-in',
+      taxCodeId: taxCodeInputVAT.id,
+      validFrom: new Date('2022-04-01'),
+      legalRate: new Decimal(0.11),
+      dppFactor: new Decimal(1.0),
+      isActive: true,
+    },
+  });
+
+  const vatPeriodAug2026 = await prisma.taxPeriod.upsert({
+    where: {
+      entityId_taxType_periodYear_periodMonth: {
+        entityId: primaryEntity.id,
+        taxType: TaxType.VAT,
+        periodYear: 2026,
+        periodMonth: 8,
+      },
+    },
+    update: {
+      totalOutputTax: new Decimal(117700000),
+      totalInputTax: new Decimal(10450000),
+      netTax: new Decimal(107250000),
+    },
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      taxType: TaxType.VAT,
+      periodYear: 2026,
+      periodMonth: 8,
+      status: TaxPeriodStatus.OPEN,
+      totalOutputTax: new Decimal(117700000),
+      totalInputTax: new Decimal(10450000),
+      netTax: new Decimal(107250000),
+    },
+  });
+
+  // Seed Tax Transactions for August (matching Screenshot 1: BILL-2026-VND01, INV-2026-ENT02, INV-2026-ENT01)
+  await prisma.taxTransaction.upsert({
+    where: { id: 'tx-tax-2026-08-01' },
+    update: {},
+    create: {
+      id: 'tx-tax-2026-08-01',
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      taxCodeId: taxCodeInputVAT.id,
+      taxRuleId: taxRuleInput.id,
+      taxPeriodId: vatPeriodAug2026.id,
+      sourceType: TaxSourceType.VENDOR_BILL,
+      vendorBillId: bill1.id,
+      transactionDate: new Date('2026-08-29'),
+      baseAmount: new Decimal(95000000),
+      dppAmount: new Decimal(95000000),
+      taxAmount: new Decimal(10450000),
+      legalRate: new Decimal(0.11),
+      direction: TaxDirection.INPUT,
+      status: TaxTransactionStatus.POSTED,
+    },
+  });
+
+  await prisma.taxTransaction.upsert({
+    where: { id: 'tx-tax-2026-08-02' },
+    update: {},
+    create: {
+      id: 'tx-tax-2026-08-02',
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      taxCodeId: taxCodeOutputVAT.id,
+      taxRuleId: taxRuleOutput.id,
+      taxPeriodId: vatPeriodAug2026.id,
+      sourceType: TaxSourceType.SALES_INVOICE,
+      salesInvoiceId: invoice2.id,
+      transactionDate: new Date('2026-08-26'),
+      baseAmount: new Decimal(720000000),
+      dppAmount: new Decimal(720000000),
+      taxAmount: new Decimal(79200000),
+      legalRate: new Decimal(0.11),
+      direction: TaxDirection.OUTPUT,
+      status: TaxTransactionStatus.POSTED,
+    },
+  });
+
+  await prisma.taxTransaction.upsert({
+    where: { id: 'tx-tax-2026-08-03' },
+    update: {},
+    create: {
+      id: 'tx-tax-2026-08-03',
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      taxCodeId: taxCodeOutputVAT.id,
+      taxRuleId: taxRuleOutput.id,
+      taxPeriodId: vatPeriodAug2026.id,
+      sourceType: TaxSourceType.SALES_INVOICE,
+      salesInvoiceId: invoice1.id,
+      transactionDate: new Date('2026-08-21'),
+      baseAmount: new Decimal(350000000),
+      dppAmount: new Decimal(350000000),
+      taxAmount: new Decimal(38500000),
+      legalRate: new Decimal(0.11),
+      direction: TaxDirection.OUTPUT,
+      status: TaxTransactionStatus.POSTED,
+    },
+  });
+
+  console.log('Seeded Tax Codes, Rules, August Period, and 3 Tax Transactions.');
+
+  // --- CASH & BANK PAYMENTS SEED (Matching Screenshot 5) ---
+  await prisma.payment.upsert({
+    where: { entityId_paymentNumber: { entityId: primaryEntity.id, paymentNumber: 'PMT-REC-2026-001' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      paymentNumber: 'PMT-REC-2026-001',
+      type: PaymentType.CUSTOMER_RECEIPT,
+      direction: PaymentDirection.INBOUND,
+      status: PaymentStatus.POSTED,
+      paymentDate: new Date('2026-08-31'),
+      customerId: customer1.id,
+      cashBankAccountId: bcaAcc.id,
+      amount: new Decimal(350000000),
+      allocatedAmount: new Decimal(350000000),
+      reference: 'INV-2026-ENT01-SETTLE',
+      notes: 'Terima Termin 1 PT. Astra International',
+      postedById: ownerUser.id,
+      postedAt: new Date('2026-08-31'),
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { entityId_paymentNumber: { entityId: primaryEntity.id, paymentNumber: 'PMT-REC-2026-002' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      paymentNumber: 'PMT-REC-2026-002',
+      type: PaymentType.CUSTOMER_RECEIPT,
+      direction: PaymentDirection.INBOUND,
+      status: PaymentStatus.POSTED,
+      paymentDate: new Date('2026-08-27'),
+      customerId: customer1.id,
+      cashBankAccountId: bcaAcc.id,
+      amount: new Decimal(48000000),
+      allocatedAmount: new Decimal(48000000),
+      reference: 'SAAS-SG-AUG',
+      notes: 'SaaS Agreement - Singapore Corp',
+      postedById: ownerUser.id,
+      postedAt: new Date('2026-08-27'),
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { entityId_paymentNumber: { entityId: primaryEntity.id, paymentNumber: 'PMT-PAY-2026-001' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      paymentNumber: 'PMT-PAY-2026-001',
+      type: PaymentType.VENDOR_PAYMENT,
+      direction: PaymentDirection.OUTBOUND,
+      status: PaymentStatus.POSTED,
+      paymentDate: new Date('2026-08-30'),
+      vendorId: vendor1.id,
+      cashBankAccountId: bcaAcc.id,
+      amount: new Decimal(95000000),
+      allocatedAmount: new Decimal(95000000),
+      reference: 'BILL-2026-VND01-SETTLE',
+      notes: 'Bayar Cloud Server AWS',
+      postedById: ownerUser.id,
+      postedAt: new Date('2026-08-30'),
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { entityId_paymentNumber: { entityId: primaryEntity.id, paymentNumber: 'PMT-PAY-2026-002' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      paymentNumber: 'PMT-PAY-2026-002',
+      type: PaymentType.VENDOR_PAYMENT,
+      direction: PaymentDirection.OUTBOUND,
+      status: PaymentStatus.POSTED,
+      paymentDate: new Date('2026-08-29'),
+      cashBankAccountId: mandiriAcc.id,
+      amount: new Decimal(185000000),
+      allocatedAmount: new Decimal(185000000),
+      reference: 'PAYROLL-AUG-2026',
+      notes: 'Distribusi Payroll Bulanan Direksi',
+      postedById: ownerUser.id,
+      postedAt: new Date('2026-08-29'),
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { entityId_paymentNumber: { entityId: primaryEntity.id, paymentNumber: 'PMT-PAY-2026-003' } },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      paymentNumber: 'PMT-PAY-2026-003',
+      type: PaymentType.VENDOR_PAYMENT,
+      direction: PaymentDirection.OUTBOUND,
+      status: PaymentStatus.POSTED,
+      paymentDate: new Date('2026-08-25'),
+      vendorId: vendor2.id,
+      cashBankAccountId: bcaAcc.id,
+      amount: new Decimal(50000000),
+      allocatedAmount: new Decimal(50000000),
+      reference: 'DMA-CAMP-AUG',
+      notes: 'Bayar Kampanye Digital agency',
+      postedById: ownerUser.id,
+      postedAt: new Date('2026-08-25'),
+    },
+  });
+
+  console.log('Seeded Cash & Bank Payments and Customer Receipts.');
+  console.log('FinaGrow Demo Database Seed completed successfully.');
 }
 
 main()
