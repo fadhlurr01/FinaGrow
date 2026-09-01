@@ -35,6 +35,7 @@ export interface AuthResponse {
     baseCurrency?: string;
   } | null;
   role: 'OWNER' | 'ADMIN' | 'ACCOUNTANT' | 'AUDITOR' | 'VIEWER' | string;
+  sessionToken?: string;
   memberships?: any[];
 }
 

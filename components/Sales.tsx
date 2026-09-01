@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Metric } from '../types';
 import StatCard from './StatCard';
+import { ScaleIcon, ArrowTrendingUpIcon, BanknotesIcon, DocumentPlusIcon } from './icons/IconComponents';
 import {
   Plus,
   RefreshCw,
