@@ -662,7 +662,31 @@ async function main() {
 
   console.log(`Seeded Customers: ${customer1.name}, ${customer2.name}`);
 
-  // 8b. Seed Exact Sales Invoices (Matching Screenshot 2)
+  // 8b. Seed Exact Sales Invoices (with realistic Overdue and Pending invoices)
+  const customer3 = await prisma.customer.upsert({
+    where: {
+      entityId_customerCode: {
+        entityId: primaryEntity.id,
+        customerCode: 'CUS-000003',
+      },
+    },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      customerCode: 'CUS-000003',
+      name: 'Bank Mandiri Persero Tbk',
+      legalName: 'PT Bank Mandiri (Persero) Tbk',
+      email: 'procurement@bankmandiri.co.id',
+      phone: '+62-21-5265555',
+      taxId: '01.000.012.3-091.000',
+      billingAddress: 'Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36-38, Jakarta Selatan',
+      paymentTermsDays: 30,
+      creditLimit: new Decimal(800000000),
+      isActive: true,
+    },
+  });
+
   const invoice1 = await prisma.salesInvoice.upsert({
     where: {
       entityId_invoiceNumber: {
@@ -749,7 +773,50 @@ async function main() {
     },
   });
 
-  console.log(`Seeded Invoices: ${invoice1.invoiceNumber}, ${invoice2.invoiceNumber}`);
+  const invoice3 = await prisma.salesInvoice.upsert({
+    where: {
+      entityId_invoiceNumber: {
+        entityId: primaryEntity.id,
+        invoiceNumber: 'INV-2026-ENT03',
+      },
+    },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      invoiceNumber: 'INV-2026-ENT03',
+      customerId: customer3.id,
+      invoiceDate: new Date('2026-07-10'),
+      dueDate: new Date('2026-08-10'),
+      currency: 'IDR',
+      exchangeRate: new Decimal(1),
+      subtotal: new Decimal(180000000),
+      discountAmount: new Decimal(0),
+      taxAmount: new Decimal(19800000),
+      totalAmount: new Decimal(199800000),
+      amountPaid: new Decimal(0),
+      amountDue: new Decimal(199800000),
+      status: 'OVERDUE' as any,
+      postingStatus: 'POSTED' as any,
+      lines: {
+        create: [
+          {
+            description: 'Banking Module Integration & API Gateway',
+            quantity: new Decimal(1),
+            unitPrice: new Decimal(180000000),
+            lineSubtotal: new Decimal(180000000),
+            discountAmount: new Decimal(0),
+            taxRate: new Decimal(0.11),
+            taxAmount: new Decimal(19800000),
+            lineTotal: new Decimal(199800000),
+            revenueAccountId: createdAccountMap['4100'],
+          },
+        ],
+      },
+    },
+  });
+
+  console.log(`Seeded Invoices: ${invoice1.invoiceNumber}, ${invoice2.invoiceNumber}, ${invoice3.invoiceNumber}`);
 
   // 8c. Seed Exact Vendor Bill (Matching Screenshot 1)
   const bill1 = await prisma.vendorBill.upsert({
@@ -796,9 +863,53 @@ async function main() {
     },
   });
 
-  console.log(`Seeded Vendor Bill: ${bill1.billNumber}`);
+  const bill2 = await prisma.vendorBill.upsert({
+    where: {
+      entityId_billNumber: {
+        entityId: primaryEntity.id,
+        billNumber: 'BILL-2026-VND02',
+      },
+    },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      entityId: primaryEntity.id,
+      billNumber: 'BILL-2026-VND02',
+      vendorId: vendor2.id,
+      vendorReference: 'DMA-AUG-2026',
+      billDate: new Date('2026-08-15'),
+      dueDate: new Date('2026-08-29'),
+      currency: 'IDR',
+      exchangeRate: new Decimal(1),
+      subtotal: new Decimal(50000000),
+      discountAmount: new Decimal(0),
+      taxAmount: new Decimal(5500000),
+      totalAmount: new Decimal(55500000),
+      amountPaid: new Decimal(0),
+      amountDue: new Decimal(55500000),
+      status: 'OVERDUE' as any,
+      postingStatus: 'POSTED' as any,
+      lines: {
+        create: [
+          {
+            description: 'Digital Performance Marketing & Ads Placement',
+            quantity: new Decimal(1),
+            unitPrice: new Decimal(50000000),
+            lineSubtotal: new Decimal(50000000),
+            discountAmount: new Decimal(0),
+            taxRate: new Decimal(0.11),
+            taxAmount: new Decimal(5500000),
+            lineTotal: new Decimal(55500000),
+            expenseAccountId: createdAccountMap['5300'],
+          },
+        ],
+      },
+    },
+  });
 
-  // 9. Seed Opening Journal Entry (Exact Balances Matching Screenshot 1 & 3)
+  console.log(`Seeded Vendor Bills: ${bill1.billNumber}, ${bill2.billNumber}`);
+
+  // 9. Seed Opening Journal Entry (Complete Non-Zero Balances for Chart of Accounts)
   await prisma.journalEntry.upsert({
     where: {
       entityId_entryNumber: {
@@ -822,19 +933,92 @@ async function main() {
           { accountId: createdAccountMap['1001'], debit: new Decimal(15000000), credit: new Decimal(0), description: 'Kas Kecil Cabang Jakarta' },
           { accountId: createdAccountMap['1002'], debit: new Decimal(1250000000), credit: new Decimal(0), description: 'Bank BCA Priority' },
           { accountId: createdAccountMap['1003'], debit: new Decimal(680000000), credit: new Decimal(0), description: 'Bank Mandiri Corporate' },
-          { accountId: createdAccountMap['1100'], debit: new Decimal(100000000), credit: new Decimal(0), description: 'Piutang Usaha Korporat' },
+          { accountId: createdAccountMap['1100'], debit: new Decimal(450000000), credit: new Decimal(0), description: 'Piutang Usaha Korporat' },
+          { accountId: createdAccountMap['1140'], debit: new Decimal(150000000), credit: new Decimal(0), description: 'Persediaan Barang Dagang' },
+          { accountId: createdAccountMap['1150'], debit: new Decimal(45000000), credit: new Decimal(0), description: 'PPN Masukan (Input Tax)' },
+          { accountId: createdAccountMap['1160'], debit: new Decimal(25000000), credit: new Decimal(0), description: 'Uang Muka Pembelian' },
           { accountId: createdAccountMap['1200'], debit: new Decimal(1200000000), credit: new Decimal(0), description: 'Persediaan Finished Goods' },
           { accountId: createdAccountMap['1500'], debit: new Decimal(5500000000), credit: new Decimal(0), description: 'Aset Tetap Gedung Merdeka' },
+          { accountId: createdAccountMap['1510'], debit: new Decimal(0), credit: new Decimal(250000000), description: 'Akumulasi Penyusutan Gedung' },
+          { accountId: createdAccountMap['1520'], debit: new Decimal(450000000), credit: new Decimal(0), description: 'Aset Tetap Kendaraan' },
+          { accountId: createdAccountMap['1530'], debit: new Decimal(0), credit: new Decimal(90000000), description: 'Akumulasi Penyusutan Kendaraan' },
+          { accountId: createdAccountMap['1590'], debit: new Decimal(800000000), credit: new Decimal(0), description: 'Aset Tetap Tanah' },
           { accountId: createdAccountMap['2000'], debit: new Decimal(0), credit: new Decimal(240000000), description: 'Utang Dagang Supplier' },
           { accountId: createdAccountMap['2100'], debit: new Decimal(0), credit: new Decimal(75000000), description: 'Utang PPN Masukan' },
+          { accountId: createdAccountMap['2110'], debit: new Decimal(0), credit: new Decimal(35000000), description: 'Utang PPh 21/23' },
+          { accountId: createdAccountMap['2140'], debit: new Decimal(0), credit: new Decimal(50000000), description: 'GRNI Clearing' },
+          { accountId: createdAccountMap['2150'], debit: new Decimal(0), credit: new Decimal(60000000), description: 'Pendapatan Diterima Dimuka' },
           { accountId: createdAccountMap['3000'], debit: new Decimal(0), credit: new Decimal(8000000000), description: 'Modal Ventura Seri-A' },
-          { accountId: createdAccountMap['3200'], debit: new Decimal(0), credit: new Decimal(430000000), description: 'Laba Ditahan Operasional' },
+          { accountId: createdAccountMap['4000'], debit: new Decimal(0), credit: new Decimal(850000000), description: 'Pendapatan Kontrak Software' },
+          { accountId: createdAccountMap['4100'], debit: new Decimal(0), credit: new Decimal(350000000), description: 'Pendapatan Lisensi API' },
+          { accountId: createdAccountMap['5000'], debit: new Decimal(180000000), credit: new Decimal(0), description: 'HPP Layanan Cloud' },
+          { accountId: createdAccountMap['5100'], debit: new Decimal(420000000), credit: new Decimal(0), description: 'Beban Gaji Direksi & Staf' },
+          { accountId: createdAccountMap['5200'], debit: new Decimal(120000000), credit: new Decimal(0), description: 'Beban Sewa Data Center' },
+          { accountId: createdAccountMap['5300'], debit: new Decimal(95000000), credit: new Decimal(0), description: 'Beban Marketing Campaign' },
+          { accountId: createdAccountMap['3200'], debit: new Decimal(0), credit: new Decimal(1380000000), description: 'Laba Ditahan Operasional' },
         ],
       },
     },
   });
 
-  // 9b. Seed Exact 5 August General Journal Transactions (Matching Screenshot 3)
+  // 9b. Seed Year-Round Monthly Transactions (Jan - Aug 2026) for Rich Dashboard Charts
+  const monthlyHistoricalEntries = [
+    // January
+    { entryNumber: 'JE-2026-M01', date: new Date('2026-01-28'), desc: 'Pendapatan Lisensi SaaS Jan 2026', drAcc: '1002', crAcc: '4000', amount: 120000000 },
+    { entryNumber: 'JE-2026-M02', date: new Date('2026-01-30'), desc: 'Beban Operasional & Server Jan 2026', drAcc: '5000', crAcc: '1002', amount: 90000000 },
+    // February
+    { entryNumber: 'JE-2026-M03', date: new Date('2026-02-27'), desc: 'Pendapatan Kontrak Cloud Feb 2026', drAcc: '1002', crAcc: '4000', amount: 140000000 },
+    { entryNumber: 'JE-2026-M04', date: new Date('2026-02-28'), desc: 'Payroll & Hosting Feb 2026', drAcc: '5100', crAcc: '1003', amount: 105000000 },
+    // March
+    { entryNumber: 'JE-2026-M05', date: new Date('2026-03-28'), desc: 'Lisensi Enterprise Mar 2026', drAcc: '1002', crAcc: '4100', amount: 165000000 },
+    { entryNumber: 'JE-2026-M06', date: new Date('2026-03-30'), desc: 'Beban Infrastruktur & Marketing Mar 2026', drAcc: '5300', crAcc: '1002', amount: 120000000 },
+    // April
+    { entryNumber: 'JE-2026-M07', date: new Date('2026-04-28'), desc: 'Software Subscription Q2 Apr 2026', drAcc: '1002', crAcc: '4000', amount: 190000000 },
+    { entryNumber: 'JE-2026-M08', date: new Date('2026-04-30'), desc: 'Operasional & Data Center Apr 2026', drAcc: '5200', crAcc: '1003', amount: 135000000 },
+    // May
+    { entryNumber: 'JE-2026-M09', date: new Date('2026-05-28'), desc: 'Enterprise SaaS Renewal May 2026', drAcc: '1002', crAcc: '4000', amount: 220000000 },
+    { entryNumber: 'JE-2026-M10', date: new Date('2026-05-30'), desc: 'Beban Gaji & Cloud May 2026', drAcc: '5100', crAcc: '1003', amount: 150000000 },
+    // June
+    { entryNumber: 'JE-2026-M11', date: new Date('2026-06-28'), desc: 'Implementasi ERP Klien Jun 2026', drAcc: '1002', crAcc: '4000', amount: 260000000 },
+    { entryNumber: 'JE-2026-M12', date: new Date('2026-06-30'), desc: 'HPP Server AWS & Opex Jun 2026', drAcc: '5000', crAcc: '1002', amount: 175000000 },
+    // July
+    { entryNumber: 'JE-2026-M13', date: new Date('2026-07-28'), desc: 'Pendapatan Kontrak Software Jul 2026', drAcc: '1002', crAcc: '4000', amount: 310000000 },
+    { entryNumber: 'JE-2026-M14', date: new Date('2026-07-30'), desc: 'Beban Operasional & Marketing Jul 2026', drAcc: '5300', crAcc: '1002', amount: 210000000 },
+  ];
+
+  for (const hist of monthlyHistoricalEntries) {
+    await prisma.journalEntry.upsert({
+      where: {
+        entityId_entryNumber: {
+          entityId: primaryEntity.id,
+          entryNumber: hist.entryNumber,
+        },
+      },
+      update: {
+        description: hist.desc,
+        entryDate: hist.date,
+      },
+      create: {
+        organizationId: organization.id,
+        entityId: primaryEntity.id,
+        entryNumber: hist.entryNumber,
+        entryDate: hist.date,
+        reference: hist.entryNumber,
+        description: hist.desc,
+        status: JournalEntryStatus.POSTED,
+        postedAt: hist.date,
+        postedById: ownerUser.id,
+        lines: {
+          create: [
+            { accountId: createdAccountMap[hist.drAcc], debit: new Decimal(hist.amount), credit: new Decimal(0), description: hist.desc },
+            { accountId: createdAccountMap[hist.crAcc], debit: new Decimal(0), credit: new Decimal(hist.amount), description: hist.desc },
+          ],
+        },
+      },
+    });
+  }
+
+  // 9c. Seed Exact 5 August General Journal Transactions (Matching Screenshot 3 with non-zero values)
   const demoAugustTransactions = [
     {
       entryNumber: 'JE-0001',
@@ -866,7 +1050,7 @@ async function main() {
       desc: 'SaaS Agreement - Singapore Corp',
       drAcc: '1002', // Bank BCA Priority
       crAcc: '4000', // Pendapatan Kontrak Software
-      amount: 48000,
+      amount: 48000000, // IDR 48,000,000 realistic nominal
     },
     {
       entryNumber: 'JE-0005',
@@ -909,6 +1093,8 @@ async function main() {
       },
     });
   }
+
+  console.log('Seeded Year-Round General Journal entries (Jan - Aug 2026).');
 
   console.log('Seeded 5 August General Journal entries matching Screenshot 3.');
 

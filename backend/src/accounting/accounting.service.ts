@@ -41,11 +41,75 @@ export class AccountingService {
         parent: {
           select: { id: true, code: true, name: true },
         },
+        journalLines: {
+          where: {
+            journalEntry: {
+              organizationId,
+              status: JournalEntryStatus.POSTED,
+              ...(entityId ? { entityId } : {}),
+            },
+          },
+          select: {
+            debit: true,
+            credit: true,
+            journalEntry: {
+              select: { entryNumber: true },
+            },
+          },
+        },
+        cashBankAccounts: {
+          where: {
+            organizationId,
+            ...(entityId ? { entityId } : {}),
+          },
+          select: { openingBalance: true },
+        },
       },
       orderBy: { code: 'asc' },
     });
 
-    return accounts;
+    return accounts.map((acc) => {
+      let openDr = new Decimal(0);
+      let openCr = new Decimal(0);
+      let totalDr = new Decimal(0);
+      let totalCr = new Decimal(0);
+
+      acc.journalLines.forEach((jl) => {
+        const d = new Decimal(jl.debit);
+        const c = new Decimal(jl.credit);
+        totalDr = totalDr.plus(d);
+        totalCr = totalCr.plus(c);
+        if (jl.journalEntry?.entryNumber?.startsWith('JE-OPEN')) {
+          openDr = openDr.plus(d);
+          openCr = openCr.plus(c);
+        }
+      });
+
+      let openingBal = 0;
+      if (acc.normalBalance === 'DEBIT' || acc.type === 'ASSET' || acc.type === 'EXPENSE') {
+        openingBal = openDr.minus(openCr).toNumber();
+      } else {
+        openingBal = openCr.minus(openDr).toNumber();
+      }
+
+      if (openingBal === 0 && acc.cashBankAccounts && acc.cashBankAccounts.length > 0) {
+        openingBal = acc.cashBankAccounts.reduce((sum, cb) => sum + new Decimal(cb.openingBalance || 0).toNumber(), 0);
+      }
+
+      if (openingBal === 0) {
+        if (acc.normalBalance === 'DEBIT' || acc.type === 'ASSET' || acc.type === 'EXPENSE') {
+          openingBal = Math.max(0, totalDr.minus(totalCr).toNumber());
+        } else {
+          openingBal = Math.max(0, totalCr.minus(totalDr).toNumber());
+        }
+      }
+
+      const { journalLines, cashBankAccounts, ...cleanAcc } = acc;
+      return {
+        ...cleanAcc,
+        openingBalance: openingBal,
+      };
+    });
   }
 
   async getAccountById(id: string, organizationId: string) {

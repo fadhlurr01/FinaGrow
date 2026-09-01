@@ -164,6 +164,42 @@ const GeneralLedger: React.FC = () => {
     }).format(amount);
   };
 
+const KNOWN_ACCOUNTS: Record<string, { code: string; name: string }> = {
+  '1001': { code: '1001', name: 'Kas Kecil Cabang Jakarta' },
+  '1002': { code: '1002', name: 'Bank BCA Priority' },
+  '1003': { code: '1003', name: 'Bank Mandiri Corporate' },
+  '1100': { code: '1100', name: 'Piutang Usaha Korporat' },
+  '1140': { code: '1140', name: 'Persediaan Barang Dagang' },
+  '1150': { code: '1150', name: 'PPN Masukan (Input Tax)' },
+  '1160': { code: '1160', name: 'Uang Muka Pembelian' },
+  '1200': { code: '1200', name: 'Persediaan Finished Goods' },
+  '1500': { code: '1500', name: 'Aset Tetap Gedung Merdeka' },
+  '1510': { code: '1510', name: 'Akumulasi Penyusutan Gedung & IT' },
+  '1520': { code: '1520', name: 'Aset Tetap Kendaraan' },
+  '1530': { code: '1530', name: 'Akumulasi Penyusutan Kendaraan' },
+  '1590': { code: '1590', name: 'Aset Tetap Tanah' },
+  '2000': { code: '2000', name: 'Utang Dagang Supplier' },
+  '2100': { code: '2100', name: 'Utang PPN Masukan' },
+  '2110': { code: '2110', name: 'Utang PPh 21/23' },
+  '2140': { code: '2140', name: 'Penerimaan Barang Belum Ditagih (GRNI)' },
+  '2150': { code: '2150', name: 'Pendapatan Diterima Dimuka' },
+  '3000': { code: '3000', name: 'Modal Ventura Seri-A' },
+  '3200': { code: '3200', name: 'Laba Ditahan Operasional' },
+  '4000': { code: '4000', name: 'Pendapatan Kontrak Software' },
+  '4100': { code: '4100', name: 'Pendapatan Lisensi API' },
+  '4800': { code: '4800', name: 'Pendapatan Bunga Bank' },
+  '4900': { code: '4900', name: 'Keuntungan Penyesuaian Persediaan' },
+  '5000': { code: '5000', name: 'HPP Layanan Cloud' },
+  '5100': { code: '5100', name: 'Beban Gaji Direksi & Staf' },
+  '5200': { code: '5200', name: 'Beban Sewa Data Center' },
+  '5300': { code: '5300', name: 'Beban Marketing Campaign' },
+  '5800': { code: '5800', name: 'Beban Penyesuaian Persediaan' },
+  '6000': { code: '6000', name: 'Beban Operasional Umum' },
+  '6100': { code: '6100', name: 'Beban Sewa Kantor' },
+  '6500': { code: '6500', name: 'Beban Penyusutan Aset' },
+  '6800': { code: '6800', name: 'Beban Administrasi Bank' },
+};
+
   // Convert backend apiEntries or local fallback into unified presentation format
   const displayJournalEntries = useMemo(() => {
     if (apiEntries.length > 0) {
@@ -174,10 +210,13 @@ const GeneralLedger: React.FC = () => {
         description: entry.description,
         status: entry.status,
         lines: entry.lines.map(l => {
-          const rawId = (l.accountId || '').replace(/^AC_/, '');
-          const acc = l.account || apiAccounts.find(a => a.id === l.accountId || a.code === rawId) || state.coa.find(a => a.id === l.accountId || a.code === rawId);
-          const code = acc?.code || rawId || '1001';
-          const name = acc?.name || 'Akun Buku Besar';
+          const cleanId = (l.accountId || '').replace(/^AC_/, '');
+          const acc = l.account 
+            || apiAccounts.find(a => a.id === l.accountId || a.code === cleanId || a.id === cleanId) 
+            || state.coa.find(a => a.id === l.accountId || a.code === cleanId || a.id === cleanId);
+          const known = KNOWN_ACCOUNTS[acc?.code || ''] || KNOWN_ACCOUNTS[cleanId] || (acc ? { code: acc.code, name: acc.name } : null);
+          const code = acc?.code || known?.code || (cleanId.match(/^\d+$/) ? cleanId : '1001');
+          const name = acc?.name || known?.name || 'Akun Buku Besar';
           return {
             accountName: `${code} - ${name}`,
             debit: Number(l.debit) || 0,
@@ -188,7 +227,7 @@ const GeneralLedger: React.FC = () => {
     }
 
     return [];
-  }, [apiEntries, apiAccounts]);
+  }, [apiEntries, apiAccounts, state.coa]);
 
   const availableAccounts = apiAccounts;
 
