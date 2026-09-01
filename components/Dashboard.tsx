@@ -77,20 +77,110 @@ const Dashboard: React.FC = () => {
     dispatch({ type: 'SET_VIEW', payload: 'Chart of Accounts' });
   };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveChartData = useMemo(() => {
-    return chartData;
-  }, [chartData]);
+    if (chartData.length > 0) return chartData;
+    if (isDemoMode) {
+      return [
+        { name: 'Jan', revenue: 120000000, expenses: 90000000 },
+        { name: 'Feb', revenue: 140000000, expenses: 85000000 },
+        { name: 'Mar', revenue: 190000000, expenses: 110000000 },
+        { name: 'Apr', revenue: 220000000, expenses: 95000000 },
+        { name: 'May', revenue: 310000000, expenses: 140000000 },
+        { name: 'Jun', revenue: 280000000, expenses: 130000000 },
+        { name: 'Jul', revenue: 350000000, expenses: 160000000 },
+        { name: 'Aug', revenue: 480000000, expenses: 220000000 },
+      ];
+    }
+    return [];
+  }, [chartData, isDemoMode]);
 
   const effectiveWatchlist = useMemo(() => {
-    return summary?.accountWatchlist || [];
-  }, [summary]);
+    if (summary?.accountWatchlist && summary.accountWatchlist.length > 0) {
+      return summary.accountWatchlist;
+    }
+    if (isDemoMode) {
+      return [
+        { id: 'w1', name: 'Bank BCA Priority', code: '1002', type: 'ASSET', currentBalance: 1455048000 },
+        { id: 'w2', name: 'Bank Mandiri Corporate', code: '1003', type: 'ASSET', currentBalance: 495000000 },
+        { id: 'w3', name: 'Kas Kecil Cabang Jakarta', code: '1001', type: 'ASSET', currentBalance: 15000000 },
+        { id: 'w4', name: 'Piutang Usaha Korporat', code: '1100', type: 'ASSET', currentBalance: 450000000 },
+        { id: 'w5', name: 'Utang Dagang Supplier', code: '2000', type: 'LIABILITY', currentBalance: 240000000 },
+      ];
+    }
+    return [];
+  }, [summary, isDemoMode]);
 
   const effectiveRecentTransactions = useMemo(() => {
-    return recentTransactions;
-  }, [recentTransactions]);
+    if (recentTransactions.length > 0) return recentTransactions;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'tx-d1',
+          date: '2026-08-31',
+          description: 'Terima Termin 1 PT. Astra International',
+          category: 'Sales',
+          type: 'income',
+          amount: 350000000,
+          status: 'Completed',
+          dr: '1002 - Bank BCA Priority',
+          cr: '1100 - Piutang Usaha Korporat',
+        },
+        {
+          id: 'tx-d2',
+          date: '2026-08-30',
+          description: 'Bayar Cloud Server AWS',
+          category: 'Operational',
+          type: 'expense',
+          amount: 95000000,
+          status: 'Completed',
+          dr: '5000 - HPP Layanan Cloud',
+          cr: '1002 - Bank BCA Priority',
+        },
+        {
+          id: 'tx-d3',
+          date: '2026-08-29',
+          description: 'Distribusi Payroll Bulanan Direksi',
+          category: 'Payroll',
+          type: 'expense',
+          amount: 185000000,
+          status: 'Completed',
+          dr: '5100 - Beban Gaji Direksi & Staf',
+          cr: '1003 - Bank Mandiri Corporate',
+        },
+        {
+          id: 'tx-d4',
+          date: '2026-08-27',
+          description: 'SaaS Agreement - Singapore Corp',
+          category: 'Sales',
+          type: 'income',
+          amount: 48000000,
+          status: 'Completed',
+          dr: '1002 - Bank BCA Priority',
+          cr: '4000 - Pendapatan Kontrak Software',
+        },
+        {
+          id: 'tx-d5',
+          date: '2026-08-25',
+          description: 'Bayar Kampanye Digital agency',
+          category: 'Marketing',
+          type: 'expense',
+          amount: 50000000,
+          status: 'Completed',
+          dr: '5300 - Beban Marketing Campaign',
+          cr: '1002 - Bank BCA Priority',
+        },
+      ];
+    }
+    return [];
+  }, [recentTransactions, isDemoMode]);
 
   const metrics: Metric[] = useMemo(() => {
-    if (summary) {
+    if (summary && (summary.totalRevenue > 0 || summary.cashBalance > 0)) {
       return [
         {
           title: t('totalRevenue') || 'Total Revenue',
@@ -115,6 +205,35 @@ const Dashboard: React.FC = () => {
           value: formatCurrency(summary.cashBalance),
           change: summary.cashBalanceChangePercent,
           changeType: 'decrease',
+        },
+      ];
+    }
+
+    if (isDemoMode) {
+      return [
+        {
+          title: t('totalRevenue') || 'Total Revenue',
+          value: formatCurrency(2450000000),
+          change: '+18.4%',
+          changeType: 'increase',
+        },
+        {
+          title: t('totalExpenses') || 'Total Expenses',
+          value: formatCurrency(1150000000),
+          change: '+5.2%',
+          changeType: 'increase',
+        },
+        {
+          title: t('netProfit') || 'Net Profit',
+          value: formatCurrency(1300000000),
+          change: '+24.1%',
+          changeType: 'increase',
+        },
+        {
+          title: t('cashBalance') || 'Cash & Bank Balance',
+          value: formatCurrency(1965048000),
+          change: '+12.5%',
+          changeType: 'increase',
         },
       ];
     }
@@ -145,7 +264,7 @@ const Dashboard: React.FC = () => {
         changeType: 'increase',
       },
     ];
-  }, [summary, state.currency, t, language]);
+  }, [summary, isDemoMode, state.currency, t, language]);
 
   return (
     <div className="container mx-auto space-y-6 pb-12">
