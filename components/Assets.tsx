@@ -181,9 +181,34 @@ export const Assets: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveAssets = useMemo(() => {
-    return assets;
-  }, [assets]);
+    if (assets.length > 0) return assets;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'ast-100',
+          assetNumber: 'AST-EQ-100',
+          name: 'Server HP ProLiant Gen10',
+          categoryId: 'cat-eq',
+          category: { name: 'EQUIPMENT' },
+          acquisitionCost: 180000000,
+          accumulatedDepreciation: 12000000,
+          usefulLifeMonths: 60,
+          depreciationMethod: 'STRAIGHT_LINE',
+          acquisitionDate: '2026-05-04',
+          status: 'ACTIVE',
+          location: 'HQ Server Room',
+          custodian: 'IT Infrastructure',
+        },
+      ];
+    }
+    return [];
+  }, [assets, isDemoMode]);
 
   // Filtered Assets
   const filteredAssets = useMemo(() => {
@@ -200,6 +225,18 @@ export const Assets: React.FC = () => {
 
   // Overall KPIs
   const kpis = useMemo(() => {
+    if (isDemoMode && effectiveAssets.length > 0) {
+      return {
+        totalCost: 180000000,
+        totalAccumDeprec: 12000000,
+        totalNBV: 168000000,
+        activeCount: 1,
+        draftCount: 0,
+        fullyDeprecCount: 0,
+        disposedCount: 0,
+      };
+    }
+
     const activeAndFull = effectiveAssets.filter((a: any) => a.status === 'ACTIVE' || a.status === 'FULLY_DEPRECIATED');
     const totalCost = activeAndFull.reduce((sum: number, a: any) => sum + Number(a.acquisitionCost || 0), 0);
     const totalAccumDeprec = activeAndFull.reduce((sum: number, a: any) => sum + Number(a.accumulatedDepreciation || 0), 0);
@@ -218,7 +255,7 @@ export const Assets: React.FC = () => {
       fullyDeprecCount,
       disposedCount,
     };
-  }, [effectiveAssets]);
+  }, [effectiveAssets, isDemoMode]);
 
   // Handle Create Asset
   const handleCreateAsset = async (e: React.FormEvent) => {

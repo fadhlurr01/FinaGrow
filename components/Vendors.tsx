@@ -99,9 +99,39 @@ const Vendors: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveVendors = useMemo(() => {
-    return vendors;
-  }, [vendors]);
+    if (vendors.length > 0) return vendors;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'vnd-1',
+          code: 'VND-0001',
+          name: 'AWS Indonesia',
+          legalName: 'PT. Amazon Web Services Indonesia',
+          email: 'budi.s@aws.id',
+          phone: '0812-3456-7890',
+          contactPerson: 'Budi Santoso',
+          outstandingBalance: 0,
+        },
+        {
+          id: 'vnd-2',
+          code: 'VND-0002',
+          name: 'Digital Marketing Agency',
+          legalName: 'PT. Kreasi Digital Agency',
+          email: 'david@digitalagency.com',
+          phone: '0815-5566-7788',
+          contactPerson: 'David Lee',
+          outstandingBalance: 50000000,
+        },
+      ];
+    }
+    return [];
+  }, [vendors, isDemoMode]);
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();

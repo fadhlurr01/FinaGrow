@@ -272,27 +272,77 @@ const Tax: React.FC = () => {
     }
   };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   // ─── Filtered Transactions ───────────────────────────────────────
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(tx => {
-      const matchesType = taxTypeFilter === 'all' || tx.taxCode?.taxType === taxTypeFilter;
-      const matchesDir = directionFilter === 'all' || tx.direction === directionFilter;
-      const term = searchTerm.toLowerCase();
-      const matchesSearch = searchTerm ? (
-        (tx.taxCode?.code?.toLowerCase() || '').includes(term) ||
-        (tx.taxCode?.name?.toLowerCase() || '').includes(term) ||
-        (tx.notes?.toLowerCase() || '').includes(term) ||
-        (tx.id.toLowerCase()).includes(term)
-      ) : true;
-      return matchesType && matchesDir && matchesSearch;
-    });
-  }, [transactions, taxTypeFilter, directionFilter, searchTerm]);
+    if (transactions.length > 0) {
+      return transactions.filter(tx => {
+        const matchesType = taxTypeFilter === 'all' || tx.taxCode?.taxType === taxTypeFilter;
+        const matchesDir = directionFilter === 'all' || tx.direction === directionFilter;
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = searchTerm ? (
+          (tx.taxCode?.code?.toLowerCase() || '').includes(term) ||
+          (tx.taxCode?.name?.toLowerCase() || '').includes(term) ||
+          (tx.notes?.toLowerCase() || '').includes(term) ||
+          (tx.id.toLowerCase()).includes(term)
+        ) : true;
+        return matchesType && matchesDir && matchesSearch;
+      });
+    }
+
+    if (isDemoMode) {
+      return [
+        {
+          id: 'tx-tax-1',
+          transactionDate: '2026-08-30',
+          documentNumber: 'BILL-2026-VND01',
+          partyName: 'AWS Indonesia',
+          taxType: 'INPUT_VAT',
+          direction: 'INBOUND',
+          baseAmount: 95000000,
+          taxRate: 11,
+          taxAmount: 10450000,
+          taxCode: { code: 'PPN-IN', name: 'PPN Masukan 11%', taxType: 'PPN' },
+        },
+        {
+          id: 'tx-tax-2',
+          transactionDate: '2026-08-27',
+          documentNumber: 'INV-2026-ENT02',
+          partyName: 'Kementerian Keuangan RI',
+          taxType: 'OUTPUT_VAT',
+          direction: 'OUTBOUND',
+          baseAmount: 720000000,
+          taxRate: 11,
+          taxAmount: 79200000,
+          taxCode: { code: 'PPN-OUT', name: 'PPN Keluaran 11%', taxType: 'PPN' },
+        },
+        {
+          id: 'tx-tax-3',
+          transactionDate: '2026-08-22',
+          documentNumber: 'INV-2026-ENT01',
+          partyName: 'PT. Astra International',
+          taxType: 'OUTPUT_VAT',
+          direction: 'OUTBOUND',
+          baseAmount: 350000000,
+          taxRate: 11,
+          taxAmount: 38500000,
+          taxCode: { code: 'PPN-OUT', name: 'PPN Keluaran 11%', taxType: 'PPN' },
+        },
+      ] as any[];
+    }
+
+    return [];
+  }, [transactions, taxTypeFilter, directionFilter, searchTerm, isDemoMode]);
 
   // Derive VAT values
-  const outputVatValue = vatSummary ? Number(vatSummary.outputVat) : 0;
-  const inputVatValue = vatSummary ? Number(vatSummary.inputVat) : 0;
-  const netVatValue = vatSummary ? Number(vatSummary.netVat) : 0;
+  const outputVatValue = isDemoMode && !vatSummary ? 117700000 : (vatSummary ? Number(vatSummary.outputVat) : 0);
+  const inputVatValue = isDemoMode && !vatSummary ? 10450000 : (vatSummary ? Number(vatSummary.inputVat) : 0);
+  const netVatValue = isDemoMode && !vatSummary ? 107250000 : (vatSummary ? Number(vatSummary.netVat) : 0);
 
   return (
     <div className="space-y-6">

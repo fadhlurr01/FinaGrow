@@ -104,9 +104,41 @@ const Budgeting: React.FC = () => {
     return coaAccounts.filter(acc => acc.type === 'EXPENSE' || acc.type === 'REVENUE');
   }, [coaAccounts]);
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveBudgets = useMemo(() => {
-    return budgets;
-  }, [budgets]);
+    if (budgets.length > 0) return budgets;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'bg-1',
+          accountId: 'acc-5100',
+          accountCode: '5100',
+          accountName: 'Beban Gaji Direksi & Staf',
+          period: selectedPeriod || '2026-09',
+          amount: 200000000,
+          actualSpent: 0,
+          remaining: 200000000,
+          utilization: 0,
+        },
+        {
+          id: 'bg-2',
+          accountId: 'acc-5300',
+          accountCode: '5300',
+          accountName: 'Beban Marketing Campaign',
+          period: selectedPeriod || '2026-09',
+          amount: 75000000,
+          actualSpent: 0,
+          remaining: 75000000,
+          utilization: 0,
+        },
+      ];
+    }
+    return [];
+  }, [budgets, selectedPeriod, isDemoMode]);
 
   // Overall calculations
   const summary = useMemo(() => {

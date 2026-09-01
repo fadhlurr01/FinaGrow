@@ -356,9 +356,49 @@ const CashBank: React.FC = () => {
     }
   };
 
+  const isDemoMode = useMemo(() => {
+    const activeEmail = (state.currentUserEmail || localStorage.getItem('fms_active_user_email') || '').toLowerCase();
+    return activeEmail.includes('demo') || activeEmail.includes('admin@finagrow.com') || !activeEmail;
+  }, [state.currentUserEmail]);
+
   const effectiveAccounts = useMemo(() => {
-    return accounts;
-  }, [accounts]);
+    if (accounts.length > 0) return accounts;
+    if (isDemoMode) {
+      return [
+        {
+          id: 'cb-1',
+          code: '1001',
+          name: 'Kas Kecil Cabang Jakarta',
+          bankName: 'KAS KECIL OPERASIONAL HQ',
+          type: 'CASH',
+          maskedAccountNumber: '**** **** 1001',
+          glBalance: 15000000,
+          coaAccount: { code: '1001', name: 'Kas Kecil Cabang Jakarta' },
+        },
+        {
+          id: 'cb-2',
+          code: '1002',
+          name: 'Bank BCA Priority',
+          bankName: 'REKENING BANK UTAMA PERUSAHAAN',
+          type: 'BANK',
+          maskedAccountNumber: '**** **** 1002',
+          glBalance: 1455048000,
+          coaAccount: { code: '1002', name: 'Bank BCA Priority' },
+        },
+        {
+          id: 'cb-3',
+          code: '1003',
+          name: 'Bank Mandiri Corporate',
+          bankName: 'REKENING BANK GIRO',
+          type: 'BANK',
+          maskedAccountNumber: '**** **** 1003',
+          glBalance: 495000000,
+          coaAccount: { code: '1003', name: 'Bank Mandiri Corporate' },
+        },
+      ];
+    }
+    return [];
+  }, [accounts, isDemoMode]);
 
   const effectiveTotalCash = useMemo(() => {
     return effectiveAccounts.reduce((sum: number, a: any) => sum + (Number(a.glBalance) || 0), 0);
@@ -368,11 +408,11 @@ const CashBank: React.FC = () => {
     <div className="container mx-auto space-y-6 font-sans">
       {/* Metrics Banner */}
       {(() => {
-        const displayBalance = effectiveAccounts.length > 0 ? effectiveTotalCash : 1965000000;
+        const displayBalance = effectiveAccounts.length > 0 ? effectiveTotalCash : 1965048000;
         const calcInflow = payments.filter((p: any) => p.type === 'CUSTOMER_RECEIPT').reduce((s: number, p: any) => s + Number(p.amount), 0);
-        const displayInflow = calcInflow > 0 ? calcInflow : (effectiveAccounts.length > 0 ? 350048000 : 0);
+        const displayInflow = calcInflow > 0 ? calcInflow : (isDemoMode ? 350048000 : 0);
         const calcOutflow = payments.filter((p: any) => p.type === 'VENDOR_PAYMENT').reduce((s: number, p: any) => s + Number(p.amount), 0);
-        const displayOutflow = calcOutflow > 0 ? calcOutflow : (effectiveAccounts.length > 0 ? 330000000 : 0);
+        const displayOutflow = calcOutflow > 0 ? calcOutflow : (isDemoMode ? 330000000 : 0);
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
